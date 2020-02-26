@@ -5,12 +5,12 @@
  *
  * @section Introduction
  *
- * ST7558 supports I²C, SPI or 8-bit parallel interface(8080 and 6800) to communicate. 
- * I2C requires 2 pins (SCL and SDA) and RESET pin. SPI requires 4 pins and RESET pin 
- * (optionaly, software RESET can be work with SPI).
- * My LCD version (from the phone Motorola C115) don't have a SPI and 8-bit parallel interface outputs, only I²C.
+ *  ST7558 supports I²C, SPI or 8-bit parallel interface(8080 and 6800) to communicate. 
+ *  I2C requires 2 pins (SCL and SDA) and RESET pin. SPI requires 4 pins and RESET pin 
+ *  (optionaly, software RESET can be work with SPI).
+ *  My LCD version (from the phone Motorola C115) doesn't have SPI and 8-bit parallel interface outputs, only I²C.
  *
- * ST7558:
+ *  ST7558:
  *      - resolution: 102x66, but version from the phone Motorola C115 have 96x65
  *      - on-chip display data RAM (102x66 = 6732 bit)
  *      - pinout:
@@ -18,24 +18,24 @@
  *          1 Vcc +3.3v           ________________________
  *          2 empty             /                          \
  *          3 I²C SDA           |   ST7558 LCD from C115   |
- *          4 I²C SCL           |           96x65          |
- *          5 A0                |                          |
+ *          4 I²C SCL           |                          |
+ *          5 A0                |             96x65        |
  *          6 GND               \ ________________________ /
  *          7 VLCD                 |  |  |  |  |  |  |  |      
  *          8 RESET                1  2  3  4  5  6  7  8
  * 
  * @section Dependencies
  *
- * no dependencies, yet
+ *  no dependencies, yet
  *
  * @section Author
  *
- * Written by Yaroslav @kashapovd Kashapov just for fun, feb 2020
- * Thanks for Tapia @kr4fty Favio, https://github.com/kr4fty
+ *  Written by Yaroslav @kashapovd Kashapov just for fun, feb 2020
+ *  Thanks for Tapia @kr4fty Favio, https://github.com/kr4fty
  *
- * @section license License
- *
- * GNU GENERAL PUBLIC LICENSE ver. 3
+ * @section License
+ *  
+ *  GNU GENERAL PUBLIC LICENSE ver. 3
  * 
  */
 
@@ -67,9 +67,7 @@ ST7558::ST7558(uint8_t rst_pin)
 ST7558::~ST7558(void) 
 {
     if (_buffer) 
-    {
        free(_buffer);
-    }
 }
 
 void ST7558::_i2cwrite_cmd(const uint8_t *data, uint8_t n)
@@ -83,13 +81,13 @@ void ST7558::_i2cwrite_cmd(const uint8_t *data, uint8_t n)
 void ST7558::_i2cwrite_data(const uint8_t *data, uint8_t n)  
 {
     Wire.beginTransmission(ST7558_I2C_ADDRESS);
-    // the Co byte need for instruction, but not for the data 
+    // the Co byte need for instruction, but not for the graphics data
     Wire.write(data, n);
     Wire.endTransmission();
 }
 
 void ST7558::_hardreset(void)
-/* ST7558 support a soft reset, but it not works with I2C */ 
+/* ST7558 support a soft reset, but it is not working with I²C */ 
 {
     pinMode(_rst_pin, OUTPUT);
     digitalWrite(_rst_pin, HIGH);
@@ -181,7 +179,7 @@ void ST7558::setContrast(byte value)
     {
         //CONTROL_BYTE
         ST7558_FUNCTIONSET|EXTENDED,
-        ST7558_VOP|(value & 0b01111111)             // value always be less than 128
+        ST7558_VOP|(value & 0b01111111)             // 127 is max contrast level
     };
     
     this -> _i2cwrite_cmd(cmd_set_contrast, sizeof(cmd_set_contrast));
@@ -189,22 +187,7 @@ void ST7558::setContrast(byte value)
 
 void ST7558::clear(void) 
 {
-    memset(_buffer, 0, ST7558_BYTES_CAPACITY);      // set the whole bytes in the buffer as 0x00
-}
-
-uint8_t *ST7558::getBuffer(void) 
-{
-    return _buffer;
-}
-
-uint8_t ST7558::width() 
-{
-    return ST7558_WIDTH;
-}
-
-uint8_t ST7558::height() 
-{
-    return ST7558_HEIGHT;
+    memset(_buffer, 0, ST7558_BYTES_CAPACITY);      // set the whole bytes in the framebuffer to zero
 }
 
 void ST7558::drawPixel(uint8_t x, uint8_t y, uint8_t color) 
@@ -218,7 +201,7 @@ void ST7558::drawPixel(uint8_t x, uint8_t y, uint8_t color)
     }
 }
 
-void ST7558::display(void) 
+void ST7558::display(void)
 {   
     this -> _setXY(0,0);
 
@@ -244,3 +227,11 @@ void ST7558::display(void)
     }
     this -> _setXY(0,0);
 }
+
+uint8_t *ST7558::getBuffer(void)  { return _buffer; }
+
+uint16_t ST7558::getBufferSize(void) { return ST7558_BYTES_CAPACITY; }
+
+uint8_t ST7558::width() { return ST7558_WIDTH; }
+
+uint8_t ST7558::height() { return ST7558_HEIGHT; }
