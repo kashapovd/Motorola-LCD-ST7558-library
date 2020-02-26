@@ -1,4 +1,43 @@
-// created 22 feb 2020
+/*!
+ * @file ST7558.cpp
+ *
+ * @mainpage Arduino library for monochrome LCD (from the phone Motorola C115) based on ST7558 drivers.
+ *
+ * @section Introduction
+ *
+ * ST7558 supports I²C, SPI or 8-bit parallel interface(8080 and 6800) to communicate. 
+ * I2C requires 2 pins (SCL and SDA) and RESET pin. SPI requires 4 pins and RESET pin 
+ * (optionaly, software RESET can be work with SPI).
+ * My LCD version (from the phone Motorola C115) don't have a SPI and 8-bit parallel interface outputs, only I²C.
+ *
+ * ST7558:
+ *      - resolution: 102x66, but version from the phone Motorola C115 have 96x65
+ *      - on-chip display data RAM (102x66 = 6732 bit)
+ *      - pinout:
+ * 
+ *          1 Vcc +3.3v           ________________________
+ *          2 empty             /                          \
+ *          3 I²C SDA           |   ST7558 LCD from C115   |
+ *          4 I²C SCL           |           96x65          |
+ *          5 A0                |                          |
+ *          6 GND               \ ________________________ /
+ *          7 VLCD                 |  |  |  |  |  |  |  |      
+ *          8 RESET                1  2  3  4  5  6  7  8
+ * 
+ * @section Dependencies
+ *
+ * no dependencies, yet
+ *
+ * @section Author
+ *
+ * Written by Yaroslav aka @kashapovd Kashapov just for fun, feb 2020
+ * Thanks for Tapia aka @kr4fty Favio, https://github.com/kr4fty
+ *
+ * @section license License
+ *
+ * GNU GENERAL PUBLIC LICENSE ver. 3
+ * 
+ */
 
 #if defined(ARDUINO) && ARDUINO >= 100
     #include "Arduino.h"
@@ -35,16 +74,16 @@ ST7558::~ST7558(void)
 
 void ST7558::_i2cwrite_cmd(const uint8_t *data, uint8_t n)
 {
-    Wire.beginTransmission(ST7558_I2C_ADDRESS);     // Start a transmition session
-    Wire.write(CONTROL_BYTE);                       // <- Co byte, see datasheet
-    Wire.write(data, n);                            // transmit a data
-    Wire.endTransmission();                         // Close a transmition session
+    Wire.beginTransmission(ST7558_I2C_ADDRESS);     // start a transmition session
+    Wire.write(CONTROL_BYTE);                       // <- the Co byte, see datasheet
+    Wire.write(data, n);                            // data transfer 
+    Wire.endTransmission();                         // close a transmition session
 }
 
 void ST7558::_i2cwrite_data(const uint8_t *data, uint8_t n)  
 {
     Wire.beginTransmission(ST7558_I2C_ADDRESS);
-    // data can't contain a Co byte, it doesn't need for 
+    // the Co byte need for instruction, but not for the data 
     Wire.write(data, n);
     Wire.endTransmission();
 }
@@ -115,7 +154,7 @@ void ST7558::invert(bool state)
 
 void ST7558::off(void) 
 {
-    uint8_t  cmd_off[] PROGMEM = 
+    uint8_t cmd_off[] PROGMEM = 
     {
         //CONTROL_BYTE,
         ST7558_FUNCTIONSET|BASIC,                       // Function set PD = 0, V = 0, H = 0 (basic instruction set)
