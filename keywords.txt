@@ -1,0 +1,30 @@
+#######################################
+# Syntax Coloring Map For ST7558 Lib
+#######################################
+
+#######################################
+# Datatypes (KEYWORD1)
+#######################################
+
+ST7558          KEYWORD1
+
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+
+begin           KEYWORD2
+off             KEYWORD2
+on              KEYWORD2
+clear           KEYWORD2
+display         KEYWORD2
+getBuffer       KEYWORD2
+getBufferSize   KEYWORD2
+width           KEYWORD2
+height          KEYWORD2
+setContrast     KEYWORD2
+invert          KEYWORD2
+drawPixel       KEYWORD2
+
+#######################################
+# Constants (LITERAL1)
+#######################################
