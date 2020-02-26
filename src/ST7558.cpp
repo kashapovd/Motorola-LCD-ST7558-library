@@ -19,7 +19,7 @@
  *          2 empty             /                          \
  *          3 I²C SDA           |   ST7558 LCD from C115   |
  *          4 I²C SCL           |                          |
- *          5 A0                |             96x65        |
+ *          5 A0                |          96x65           |
  *          6 GND               \ ________________________ /
  *          7 VLCD                 |  |  |  |  |  |  |  |      
  *          8 RESET                1  2  3  4  5  6  7  8
@@ -103,16 +103,20 @@ void ST7558::_setXY(uint8_t x, uint8_t y)
     {
         //CONTROL_BYTE
         ST7558_FUNCTIONSET|BASIC,           // Function set PD = 0, V = 0, H = 0 (basic instruction set)
-        ST7558_XADDR|x,
-        ST7558_YADDR|y
+        ST7558_XADDR+x,
+        ST7558_YADDR+y
     };
     this -> _i2cwrite_cmd(cmd_setxy, sizeof(cmd_setxy));
 }
 
+/**************************************************************/
+/*!
+    @brief This method makes initial display setup
+*/
+/**************************************************************/
 void ST7558::begin(void) 
 {
     Wire.begin();
-
     _buffer = (uint8_t *)malloc(ST7558_BYTES_CAPACITY);
 
     this -> clear();
@@ -138,6 +142,14 @@ void ST7558::begin(void)
     this -> _i2cwrite_cmd(cmd_init, sizeof(cmd_init)); 
 }
 
+/****************************************************************/
+/*!  
+    @brief  Activate or deactivate the inverse video mode. 
+    If true, your pixel will be black, if bit in RAM is zero. 
+    And vice versa
+    @param  state   true - mode is on, false - off
+*/
+/****************************************************************/
 void ST7558::invert(bool state) 
 {
     uint8_t cmd_invert[] PROGMEM = 
@@ -150,6 +162,11 @@ void ST7558::invert(bool state)
     this -> _i2cwrite_cmd(cmd_invert, sizeof(cmd_invert));
 }
 
+/**************************************************************/
+/*!
+    @brief Just display off, not power down
+*/
+/**************************************************************/
 void ST7558::off(void) 
 {
     uint8_t cmd_off[] PROGMEM = 
@@ -161,6 +178,11 @@ void ST7558::off(void)
     this -> _i2cwrite_cmd(cmd_off, sizeof(cmd_off));
 }
 
+/**************************************************************/
+/*!
+    @brief Display all RAM bits. Normal mode
+*/
+/**************************************************************/
 void ST7558::on(void) 
 {
     uint8_t cmd_on[] PROGMEM = 
@@ -173,23 +195,43 @@ void ST7558::on(void)
     this -> _i2cwrite_cmd(cmd_on, sizeof(cmd_on));
 }
 
-void ST7558::setContrast(byte value) 
+/***************************************************************/
+/*!  
+    @brief  Specified contrast level. It drives a voltage 
+    operating by software. See 32 page of the datasheet
+    @param  value   contrast level [0...127]. I recommended 70.
+*/
+/****************************************************************/
+void ST7558::setContrast(uint8_t value) 
 {
     uint8_t cmd_set_contrast[] PROGMEM = 
     {
         //CONTROL_BYTE
         ST7558_FUNCTIONSET|EXTENDED,
-        ST7558_VOP|(value & 0b01111111)             // 127 is max contrast level
+        uint8_t(ST7558_VOP)+(value & 0b01111111)             // 127 is max contrast level
     };
     
     this -> _i2cwrite_cmd(cmd_set_contrast, sizeof(cmd_set_contrast));
 }
 
+/**************************************************************/
+/*!
+    @brief This method sets all framebuffer bits to zero
+*/
+/**************************************************************/
 void ST7558::clear(void) 
 {
-    memset(_buffer, 0, ST7558_BYTES_CAPACITY);      // set the whole bytes in the framebuffer to zero
+    memset(_buffer, 0, ST7558_BYTES_CAPACITY);
 }
 
+/****************************************************************/
+/*!  
+    @brief  Draw one pixel to the framebuffer
+    @param  x   x coordinate
+    @param  y   y coordinate
+    @param  color 
+*/
+/****************************************************************/
 void ST7558::drawPixel(uint8_t x, uint8_t y, uint8_t color) 
 {
     if ((x >= 0 && x < ST7558_WIDTH) && (y >= 0 && y < ST7558_HEIGHT)) 
@@ -201,6 +243,11 @@ void ST7558::drawPixel(uint8_t x, uint8_t y, uint8_t color)
     }
 }
 
+/**************************************************************/
+/*!
+    @brief This method writes all framebuffer to the ST7558 RAM 
+*/
+/**************************************************************/
 void ST7558::display(void)
 {   
     this -> _setXY(0,0);
@@ -228,10 +275,34 @@ void ST7558::display(void)
     this -> _setXY(0,0);
 }
 
+/**************************************************************/
+/*!
+    @brief Get memory pointer to the framebuffer
+    @return Pointer to the first framebuffer's element 
+*/
+/**************************************************************/
 uint8_t *ST7558::getBuffer(void)  { return _buffer; }
 
+/**************************************************************/
+/*!
+    @brief Get size of the framebuffer in bytes
+    @return Size in bytes
+*/
+/**************************************************************/
 uint16_t ST7558::getBufferSize(void) { return ST7558_BYTES_CAPACITY; }
 
+/**************************************************************/
+/*!
+    @brief Get width of the display
+    @return Width in pixels
+*/
+/**************************************************************/
 uint8_t ST7558::width() { return ST7558_WIDTH; }
 
+ /***************************************************************/
+/*!
+    @brief Get height of the display
+    @return Height in pixels
+*/
+/***************************************************************/
 uint8_t ST7558::height() { return ST7558_HEIGHT; }

@@ -5,12 +5,12 @@
  *
  * @section Introduction
  *
- * ST7558 supports I²C, SPI or 8-bit parallel interface(8080 and 6800) to communicate. 
- * I2C requires 2 pins (SCL and SDA) and RESET pin. SPI requires 4 pins and RESET pin 
- * (optionaly, software RESET can be work with SPI).
- * My LCD version (from the phone Motorola C115) doesn't have SPI and 8-bit parallel interface outputs, only I²C.
+ *  ST7558 supports I²C, SPI or 8-bit parallel interface(8080 and 6800) to communicate. 
+ *  I2C requires 2 pins (SCL and SDA) and RESET pin. SPI requires 4 pins and RESET pin 
+ *  (optionaly, software RESET can be work with SPI).
+ *  My LCD version (from the phone Motorola C115) doesn't have SPI and 8-bit parallel interface outputs, only I²C.
  *
- * ST7558:
+ *  ST7558:
  *      - resolution: 102x66, but version from the phone Motorola C115 have 96x65
  *      - on-chip display data RAM (102x66 = 6732 bit)
  *      - pinout:
@@ -26,16 +26,16 @@
  * 
  * @section Dependencies
  *
- * no dependencies, yet
+ *  no dependencies, yet
  *
  * @section Author
  *
- * Written by Yaroslav @kashapovd Kashapov just for fun, feb 2020
- * Thanks for Tapia @kr4fty Favio, https://github.com/kr4fty
+ *  Written by Yaroslav @kashapovd Kashapov just for fun, feb 2020
+ *  Thanks for Tapia @kr4fty Favio, https://github.com/kr4fty
  *
  * @section License
  *
- * GNU GENERAL PUBLIC LICENSE ver. 3
+ *  GNU GENERAL PUBLIC LICENSE ver. 3
  * 
  */
 
