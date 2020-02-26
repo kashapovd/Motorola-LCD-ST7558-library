@@ -18,8 +18,8 @@
  *          1 Vcc +3.3v           ________________________
  *          2 empty             /                          \
  *          3 I²C SDA           |   ST7558 LCD from C115   |
- *          4 I²C SCL           |           96x65          |
- *          5 A0                |                          |
+ *          4 I²C SCL           |                          |
+ *          5 A0                |          96x65           |
  *          6 GND               \ ________________________ /
  *          7 VLCD                 |  |  |  |  |  |  |  |      
  *          8 RESET                1  2  3  4  5  6  7  8
@@ -30,8 +30,8 @@
  *
  * @section Author
  *
- * Written by Yaroslav aka @kashapovd Kashapov just for fun, feb 2020
- * Thanks for Tapia aka @kr4fty Favio, https://github.com/kr4fty
+ * Written by Yaroslav @kashapovd Kashapov just for fun, feb 2020
+ * Thanks for Tapia @kr4fty Favio, https://github.com/kr4fty
  *
  * @section license License
  *

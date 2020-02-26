@@ -30,8 +30,8 @@
  *
  * @section Author
  *
- * Written by Yaroslav aka @kashapovd Kashapov just for fun, feb 2020
- * Thanks for Tapia aka @kr4fty Favio, https://github.com/kr4fty
+ * Written by Yaroslav @kashapovd Kashapov just for fun, feb 2020
+ * Thanks for Tapia @kr4fty Favio, https://github.com/kr4fty
  *
  * @section license License
  *
@@ -189,7 +189,7 @@ void ST7558::setContrast(byte value)
 
 void ST7558::clear(void) 
 {
-    memset(_buffer, 0, ST7558_BYTES_CAPACITY);      // set the whole bytes in the buffer into 0x00
+    memset(_buffer, 0, ST7558_BYTES_CAPACITY);      // set the whole bytes in the buffer as 0x00
 }
 
 uint8_t *ST7558::getBuffer(void) 
