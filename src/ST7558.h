@@ -42,22 +42,17 @@
 #ifndef ST7558_H
 #define ST7558_H
 
-#include <Arduino.h>
 #if defined(ARDUINO) && ARDUINO >= 100
-#include "Arduino.h"
+    #include "Arduino.h"
 #else
-#include "WProgram.h"
-#include "pins_arduino.h"
+    #include "WProgram.h"
 #endif
 
 #define ST7558_WIDTH    96  
 #define ST7558_HEIGHT   65
 
-#define ST7558_BLACK 1
-#define ST7558_WHITE 0
-
-#define BLACK ST7558_BLACK
-#define WHITE ST7558_WHITE
+#define BLACK 1
+#define WHITE 0
 
 #define I2C_MAX 32
 
@@ -114,125 +109,30 @@ class ST7558
 {
     private:
 
-        void 
-            _i2cwrite_cmd(const uint8_t *data, uint8_t n),
-            _i2cwrite_data(const uint8_t *data, uint8_t n),
-            _hardreset(void),
-            _setXY(uint8_t x, uint8_t y);
-        uint8_t 
-            _rst_pin,
-            *_buffer;
+        void _i2cwrite_cmd(const uint8_t *data, uint8_t n);
+        void _i2cwrite_data(const uint8_t *data, uint8_t n);
+        void _hardreset(void);
+        void _setXY(uint8_t x, uint8_t y);
+        uint8_t _rst_pin;
+        uint8_t *_buffer;
             
     public:
 
         ST7558 (uint8_t rst_pin);
         ~ST7558(void);
-        
-        /**************************************************************/
-        /*!
-            @brief This method makes initial display setup
-        */
-        /**************************************************************/
         void begin(void);
-        
-        
-        /**************************************************************/
-        /*!
-            @brief Just display off, not power down
-        */
-        /**************************************************************/
         void off(void);
-
-
-        /**************************************************************/
-        /*!
-            @brief Display all RAM bits. Normal mode
-        */
-        /**************************************************************/
         void on(void);
-
-
-        /**************************************************************/
-        /*!
-            @brief This method sets all framebuffer bits to zero
-        */
-        /**************************************************************/
         void clear(void);
-
-        
-        /**************************************************************/
-        /*!
-            @brief This method writes all framebuffer to the ST7558 RAM 
-        */
-        /**************************************************************/
         void display(void);
-
-        /**************************************************************/
-        /*!
-            @brief Get memory pointer to the framebuffer
-            @return Pointer to the first framebuffer's element 
-        */
-        /**************************************************************/
         uint8_t *getBuffer(void);
-
-
-        /**************************************************************/
-        /*!
-            @brief Get size of the framebuffer in bytes
-            @return Size in bytes
-        */
-        /**************************************************************/
         uint16_t getBufferSize(void);
-
-
-        /**************************************************************/
-        /*!
-            @brief Get width of the display
-            @return Width in pixels
-        */
-        /**************************************************************/
         uint8_t width(void);
-
-        
-        /***************************************************************/
-        /*!
-            @brief Get height of the display
-            @return Height in pixels
-        */
-        /***************************************************************/
         uint8_t height(void);
-
-        
-        /***************************************************************/
-        /*!  
-            @brief  Specified contrast level. It drives a voltage 
-            operating by software. See 32 page of the datasheet
-            @param  value   contrast level [0...127]. I recommended 70.
-        */
-        /****************************************************************/
-        void setContrast(uint8_t value);
-        
-        
-        /****************************************************************/
-        /*!  
-            @brief  Activate or deactivate the inverse video mode. 
-            If true, your pixel will be black, if bit in RAM is zero. 
-            And vice versa
-            @param  state   true - mode is on, false - off
-        */
-        /****************************************************************/
+        void setContrast(const uint8_t value);
         void invert(bool state);
-
-        
-        /****************************************************************/
-        /*!  
-            @brief  Draw one pixel to the framebuffer
-            @param  x   x coordinate
-            @param  y   y coordinate
-            @param  color 
-        */
-        /****************************************************************/
         void drawPixel(uint8_t x, uint8_t y, uint8_t color);
-
+        void drawRect(const uint8_t x, const uint8_t y, const uint8_t w, const uint8_t h, const uint8_t color);
+        void fillRect(const uint8_t x, const uint8_t y, const uint8_t w, const uint8_t h, const uint8_t color);
 };
 #endif
