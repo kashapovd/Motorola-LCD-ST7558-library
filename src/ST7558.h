@@ -109,30 +109,71 @@ class ST7558
 {
     private:
 
-        void _i2cwrite_cmd(const uint8_t *data, uint8_t n);
-        void _i2cwrite_data(const uint8_t *data, uint8_t n);
+        void _i2cwrite_cmd (const uint8_t *data, 
+                            uint8_t n);
+
+        void _i2cwrite_data(const uint8_t *data, 
+                            uint8_t n);
+
         void _hardreset(void);
-        void _setXY(uint8_t x, uint8_t y);
+
+        void _setXY (uint8_t x, 
+                     uint8_t y);
+
+        void _writePixel   (const uint8_t x, 
+                            const uint8_t y,
+                            const uint8_t color);
         uint8_t _rst_pin;
+
         uint8_t *_buffer;
             
     public:
 
         ST7558 (uint8_t rst_pin);
+
         ~ST7558(void);
+
         void begin(void);
+
         void off(void);
+
         void on(void);
-        void clear(void);
-        void display(void);
-        uint8_t *getBuffer(void);
-        uint16_t getBufferSize(void);
-        uint8_t width(void);
-        uint8_t height(void);
+
         void setContrast(const uint8_t value);
+
         void invert(bool state);
-        void drawPixel(uint8_t x, uint8_t y, uint8_t color);
-        void drawRect(const uint8_t x, const uint8_t y, const uint8_t w, const uint8_t h, const uint8_t color);
-        void fillRect(const uint8_t x, const uint8_t y, const uint8_t w, const uint8_t h, const uint8_t color);
+
+        void clear(void);
+
+        void display(void);
+
+        uint8_t width(void);
+        
+        uint8_t height(void);
+        
+        uint8_t *getBuffer(void);
+
+        uint16_t getBufferSize(void);
+
+        void pushBuffer(uint8_t *buffer, 
+                        const uint16_t size);
+
+        void drawPixel (const uint8_t x, 
+                        const uint8_t y, 
+                        const uint8_t color);
+
+        void drawRect  (const uint8_t x, 
+                        const uint8_t y, 
+                        const uint8_t w, 
+                        const uint8_t h, 
+                        const uint8_t color);
+
+        void fillRect  (const uint8_t x, 
+                        const uint8_t y, 
+                        const uint8_t w, 
+                        const uint8_t h, 
+                        const uint8_t color);
+
+        void fillScreen(const uint8_t color);
 };
 #endif

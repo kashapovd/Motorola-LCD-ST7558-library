@@ -87,13 +87,14 @@ void ST7558::_i2cwrite_cmd(const uint8_t *data, uint8_t n)
     Wire.write(CONTROL_BYTE);                       // <- the Co byte, see datasheet
     bytesOut = 1;
     while (n--) {
-        if (bytesOut++ >= I2C_MAX) {
+        if (bytesOut >= I2C_MAX) {
             Wire.endTransmission();
             Wire.beginTransmission(ST7558_I2C_ADDRESS);
             Wire.write(CONTROL_BYTE);
             bytesOut = 1; 
         }
         Wire.write(*data++);
+        bytesOut++;
     } 
     Wire.endTransmission();
 }
@@ -109,13 +110,14 @@ void ST7558::_i2cwrite_data(const uint8_t *data, uint8_t n)
     Wire.write((uint8_t)0x40);
     bytesOut = 1;
     while (n--) {
-        if (bytesOut++ >= I2C_MAX) {
+        if (bytesOut >= I2C_MAX) {
             Wire.endTransmission();
             Wire.beginTransmission(ST7558_I2C_ADDRESS);
             Wire.write((uint8_t)0x40);
             bytesOut = 1; 
         }
         Wire.write(*data++);
+        bytesOut++;
     } 
     Wire.endTransmission();
 }
@@ -198,9 +200,8 @@ void ST7558::invert(bool state)
     {
         //CONTROL_BYTE,
         ST7558_FUNCTIONSET|BASIC,                             // Function set PD = 0, V = 0, H = 0 (basic instruction set)
-        ST7558_DISPLAY_CONROL| (state) ? INVERT : ON,         // Display control D = 1, E = 1 (Invert video mode)
+        ST7558_DISPLAY_CONROL | (state) ? INVERT : ON,         // Display control D = 1, E = 1 (Invert video mode)
     };
-
     this->_i2cwrite_cmd(cmd_invert, sizeof(cmd_invert));
 }
 
@@ -257,8 +258,8 @@ void ST7558::setContrast(const uint8_t value)
 /** @brief This method sets all framebuffer bits to zero
 */
 /**************************************************************/
-void ST7558::clear(void) { memset(_buffer, 0, 
-                           ST7558_BYTES_CAPACITY); }
+void ST7558::clear(void) 
+{ memset(_buffer, 0, ST7558_BYTES_CAPACITY); }
 
 /**************************************************************/
 /** @brief This method writes all framebuffer to the ST7558 RAM 
@@ -278,9 +279,10 @@ void ST7558::display(void)
         column = 0;
         this->_setXY(column,page);
 
-        for (int i = column; i < ST7558_WIDTH; i++)
+        while (column < ST7558_WIDTH)
         {
-            buff[i] = _buffer[ST7558_WIDTH * page + i];
+            buff[column] = _buffer[ST7558_WIDTH * page + column];
+            column++;
         }
         this->_i2cwrite_data(buff, sizeof(buff));
     }
@@ -321,9 +323,27 @@ uint8_t ST7558::width() { return ST7558_WIDTH; }
 uint8_t ST7558::height() { return ST7558_HEIGHT; }
 
 
+void ST7558::pushBuffer(uint8_t *buffer, const uint16_t size)
+{
+    if (size <= ST7558_BYTES_CAPACITY) 
+    {
+        memmove(_buffer, buffer, size);
+    }
+}
+
+
 /*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
 //                      DRAWING FUNCTIONS                       //   
 /*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
+
+void ST7558::_writePixel(const uint8_t x, const uint8_t y, 
+                        const uint8_t color)
+{
+    color ?
+        _buffer[x + (y/8) * ST7558_WIDTH] |= (1 << y%8)
+        :
+        _buffer[x + (y/8) * ST7558_WIDTH] &= ~(1 << y%8);
+}
 
 /****************************************************************/
 /** @brief  Draw one pixel to the framebuffer
@@ -335,13 +355,10 @@ uint8_t ST7558::height() { return ST7558_HEIGHT; }
 void ST7558::drawPixel (const uint8_t x, const uint8_t y, 
                         const uint8_t color) 
 {
-    if (    (x >= 0 && x < ST7558_WIDTH) && 
-            (y >= 0 && y < ST7558_HEIGHT)    ) 
+    if ((x >= 0 && x < ST7558_WIDTH) && 
+        (y >= 0 && y < ST7558_HEIGHT)) 
     {   
-        color ?
-            _buffer[x + (y/8) * ST7558_WIDTH] |= (1 << y%8)
-        :
-            _buffer[x + (y/8) * ST7558_WIDTH] &= ~(1 << y%8);
+        this->_writePixel(x, y, color);
     }
 }
 
@@ -358,16 +375,23 @@ void ST7558::drawRect(const uint8_t x, const uint8_t y,
                       const uint8_t w, const uint8_t h, 
                       const uint8_t color)
 {
-    for (int i = x; i <= w+x; i++) 
+    if ((x >= 0 && x < ST7558_WIDTH) && 
+        (y >= 0 && y < ST7558_HEIGHT)) 
     {
-        drawPixel(i, y, color);
-        drawPixel(i, y+h, color);
+        if (color) 
+        {
+            for (int i = x; i <= w+x; i++) 
+            {
+                this->_writePixel(i, y, color);
+                this->_writePixel(i, y+h, color);
+            }
+            for (int i = y; i <= h+y; i++) 
+            {
+                this->_writePixel(x, i, color);
+                this->_writePixel(x+w, i, color);
+            }
+        } 
     }
-    for (int i = y; i <= h+y; i++) 
-    {
-        drawPixel(x, i, color);
-        drawPixel(x+w, i, color);
-    }   
 }
 
 /****************************************************************/
@@ -383,11 +407,18 @@ void ST7558::fillRect(const uint8_t x, const uint8_t y,
                       const uint8_t w, const uint8_t h, 
                       const uint8_t color) 
 {
-    for (int i = y; i < h+y; i++) 
+    if ((x >= 0 && x < ST7558_WIDTH) && 
+        (y >= 0 && y < ST7558_HEIGHT)) 
     {
-        for (int j = x; j <= w+x; j++) 
+        for (int i = y; i < h+y; i++) 
         {
-            drawPixel(j, i, color);
+            for (int j = x; j <= w+x; j++) 
+            {
+                this->_writePixel(j, i, color);
+            }
         }
     }
 }
+
+void ST7558::fillScreen(const uint8_t color) 
+{ memset(_buffer, 0xFF, ST7558_BYTES_CAPACITY); }
