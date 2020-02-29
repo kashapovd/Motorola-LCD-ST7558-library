@@ -61,6 +61,7 @@
 
 #define _swap(a, b) a = a ^ b ^ (b = a)
 
+
 /*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
 //                  CONSTRUCTOR & DESTRUCTOR                    //   
 /*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
@@ -379,12 +380,12 @@ void ST7558::drawRect(const uint8_t x, const uint8_t y,
     if ((x >= 0 && x < ST7558_WIDTH) && 
         (y >= 0 && y < ST7558_HEIGHT)) 
     {
-        for (int i = x; i <= w+x; i++) 
+        for (int i = x; i < w+x; i++) 
         {
             this->_writePixel(i, y, color);
             this->_writePixel(i, y+h, color);
         }
-        for (int i = y; i <= h+y; i++) 
+        for (int i = y; i < h+y; i++) 
         {
             this->_writePixel(x, i, color);
             this->_writePixel(x+w, i, color);
@@ -410,7 +411,7 @@ void ST7558::fillRect(const uint8_t x, const uint8_t y,
     {
         for (int i = y; i < h+y; i++) 
         {
-            for (int j = x; j <= w+x; j++) 
+            for (int j = x; j < w+x; j++) 
             {
                 this->_writePixel(j, i, color);
             }
@@ -448,3 +449,96 @@ void ST7558::fillSquare(const uint8_t x, const uint8_t y,
 /***************************************************************/
 void ST7558::fillScreen(const uint8_t color) 
 { memset(_buffer, color ? 0xFF : 0x00, ST7558_BYTES_CAPACITY); }
+
+/****************************************************************/
+/** @brief  Draw a line. Bresenham's algorithm
+    @param  x1  x coordinate of start point
+    @param  y1  y coordinate of start point
+    @param  x2  x coordinate of end point
+    @param  y2  y coordinate of end point
+    @param  color 
+*/
+/****************************************************************/
+void ST7558::drawLine(const uint8_t x1, const uint8_t y1, const uint8_t x2, const uint8_t y2, const uint8_t color) 
+{
+
+    const uint8_t dx = abs(x2 - x1);
+    const uint8_t dy = abs(y2 - y1);
+    const uint8_t sx = x1 < x2 ? 1 : -1;
+    const uint8_t sy = y1 < y2 ? 1 : -1;
+    int error = dx - dy;
+
+    uint8_t x = x1;
+    uint8_t y = y1;
+
+    _writePixel(x2, y2, color);
+    while(x != x2 || y != y2) 
+    {
+        const int16_t error2 = error * 2;
+        _writePixel(x, y, color);
+        if(error2 > -dy) 
+        {
+            error -= dy;
+            x += sx;
+        }
+        if(error2 < dx) 
+        {
+            error += dx;
+            y += sy;
+        }
+    }
+}
+
+/****************************************************************/
+/** @brief  Draw a line. DDA algorithm. 
+    @param  x1  x coordinate of start point
+    @param  y1  y coordinate of start point
+    @param  x2  x coordinate of end point
+    @param  y2  y coordinate of end point
+    @param  color 
+*/
+/****************************************************************/
+void ST7558::drawLineDDA(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2, const uint8_t color)
+{
+    if (x1 > x2) 
+    {
+        _swap(x1, x2);
+        _swap(y1,y2);
+    }
+    const uint8_t dx = x2 - x1;
+    const uint8_t dy = abs(y2 - y1);
+
+    uint8_t length = max(dy, dx);
+
+    const float dsx = float(x2 - x1) / float(length);
+    const float dsy = float(y2 - y1) / float(length);
+
+    float x = x1;
+    float y = y1;
+
+    while (length--) 
+    {
+        x += dsx;
+        y += dsy;
+        _writePixel(round(x), round(y), color);
+    }
+}
+
+/****************************************************************/
+/** @brief  Draw a triangle
+    @param  x1  x coordinate of first vertex
+    @param  y1  y coordinate of first vertex
+    @param  x2  x coordinate of second vertex
+    @param  y2  y coordinate of second vertex
+    @param  x3  x coordinate of third vertex
+    @param  y3  y coordinate of third vertex
+    @param  color 
+*/
+/****************************************************************/
+void ST7558::drawTriangle(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2, 
+                          uint8_t x3, uint8_t y3, const uint8_t color) 
+{
+    drawLineDDA(x1,y1,x2,y2,color);
+    drawLineDDA(x2,y2,x3,y3,color);
+    drawLineDDA(x3,y3,x1,y1,color);
+}

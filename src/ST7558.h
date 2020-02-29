@@ -165,5 +165,15 @@ class ST7558
                         const uint8_t color);
 
         void fillScreen(const uint8_t color);
+
+        void drawLine  (const uint8_t x1, const uint8_t y1, const uint8_t x2, 
+                        const uint8_t y2, const uint8_t color);
+
+        void drawLineDDA   (uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2, 
+                            const uint8_t color);
+
+        void drawTriangle  (const uint8_t x1, const uint8_t y1, const uint8_t x2, 
+                            const uint8_t y2, uint8_t x3, uint8_t y3, 
+                            const uint8_t color);
 };
 #endif
