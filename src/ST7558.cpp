@@ -14,16 +14,17 @@
  *      - resolution: 102x66, but version from the phone Motorola C115 have 96x65
  *      - on-chip display data RAM (102x66 = 6732 bit)
  *      - pinout:
- * 
- *          1 Vcc +3.3v           ________________________
- *          2 empty             /                          \
- *          3 I²C SDA           |   ST7558 LCD from C115   |
- *          4 I²C SCL           |                          |
- *          5 A0                |          96x65           |
- *          6 GND               \ ________________________ /
- *          7 VLCD                 |  |  |  |  |  |  |  |      
- *          8 RESET                1  2  3  4  5  6  7  8
- * 
+ *                               ________________________
+ *          1 Vcc +3.3v         / ______________________ \ 
+ *          2 none             | |                      | |
+ *          3 I²C SDA          | | ST7558 LCD from C115 | |
+ *          4 I²C SCL          | |                      | |
+ *          5 A0               | |        96x65         | |
+ *          6 GND              | |______________________| |
+ *          7 VLCD              \________________________/
+ *          8 RESET               |  |  |  |  |  |  |  |
+ *          .......               1  2  3  4  5  6  7  8
+ *  
  * @section Dependencies
  *
  *  no dependencies, yet
@@ -54,6 +55,10 @@
 #include "ST7558.h"
 
 #define ST7558_BYTES_CAPACITY ST7558_WIDTH * (ST7558_HEIGHT + 7) / 8
+
+#define COLUMNS ST7558_WIDTH
+#define PAGES ST7558_BYTES_CAPACITY / COLUMNS
+
 #define _swap(a, b) a = a ^ b ^ (b = a)
 
 /*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
@@ -70,6 +75,7 @@ ST7558::~ST7558(void)
     if (_buffer) 
        free(_buffer);
 }
+
 
 /*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
 //                          LOW-LEVEL UTILS                     //   
@@ -108,13 +114,13 @@ void ST7558::_i2cwrite_data(const uint8_t *data, uint8_t n)
     uint8_t bytesOut;
     Wire.beginTransmission(ST7558_I2C_ADDRESS); 
     Wire.write((uint8_t)0x40);
-    bytesOut = 1;
+    bytesOut = 2;
     while (n--) {
         if (bytesOut >= I2C_MAX) {
             Wire.endTransmission();
             Wire.beginTransmission(ST7558_I2C_ADDRESS);
             Wire.write((uint8_t)0x40);
-            bytesOut = 1; 
+            bytesOut = 2; 
         }
         Wire.write(*data++);
         bytesOut++;
@@ -124,21 +130,20 @@ void ST7558::_i2cwrite_data(const uint8_t *data, uint8_t n)
 
 /**************************************************************/
 /** @brief This method makes hardware reset. ST7558 support a 
-           soft reset, but it is not working with I²C :(
+           software reset, but it is not working with I²C :(
 */
 /**************************************************************/
 void ST7558::_hardreset(void)
 {
     pinMode(_rst_pin, OUTPUT);
-    digitalWrite(_rst_pin, HIGH);
-    _delay_ms(5);                           // VDD goes high at start, pause for 1 ms
     digitalWrite(_rst_pin, LOW);            // Bring reset low
     _delay_ms(5);                           // Wait 5ms
     digitalWrite(_rst_pin, HIGH);           // Bring out of reset
+    _delay_ms(5);                           // Wait 5ms
 }
 
 /**************************************************************/
-/** @brief This method sets x[0...101](columns) and 
+/** @brief Set x[0...101](columns) and 
            y[0...9](pages) address of RAM.
 */
 /**************************************************************/
@@ -155,13 +160,12 @@ void ST7558::_setXY(uint8_t x, uint8_t y)
 }
 
 /**************************************************************/
-/** @brief This method makes initial display setup
+/** @brief Make initial display setup
 */
 /**************************************************************/
 void ST7558::begin(void) 
 {
     Wire.begin();
-    Serial.begin(9600);
     _buffer = (uint8_t *)malloc(ST7558_BYTES_CAPACITY);
 
     this->clear();
@@ -199,8 +203,8 @@ void ST7558::invert(bool state)
     uint8_t cmd_invert[] PROGMEM = 
     {
         //CONTROL_BYTE,
-        ST7558_FUNCTIONSET|BASIC,                             // Function set PD = 0, V = 0, H = 0 (basic instruction set)
-        ST7558_DISPLAY_CONROL | (state) ? INVERT : ON,         // Display control D = 1, E = 1 (Invert video mode)
+        ST7558_FUNCTIONSET|BASIC,                           // Function set PD = 0, V = 0, H = 0 (basic instruction set)
+        ST7558_DISPLAY_CONROL | (state) ? INVERT : ON,      // Display control D = 1, E = 1 (Invert video mode)
     };
     this->_i2cwrite_cmd(cmd_invert, sizeof(cmd_invert));
 }
@@ -214,8 +218,8 @@ void ST7558::off(void)
     uint8_t cmd_off[] PROGMEM = 
     {
         //CONTROL_BYTE,
-        ST7558_FUNCTIONSET|BASIC,                       // Function set PD = 0, V = 0, H = 0 (basic instruction set)
-        ST7558_DISPLAY_CONROL|OFF,                      // Display control D = 0, E = 0 (Display off)
+        ST7558_FUNCTIONSET|BASIC,                           // Function set PD = 0, V = 0, H = 0 (basic instruction set)
+        ST7558_DISPLAY_CONROL|OFF,                          // Display control D = 0, E = 0 (Display off)
     };
     this->_i2cwrite_cmd(cmd_off, sizeof(cmd_off));
 }
@@ -229,15 +233,15 @@ void ST7558::on(void)
     uint8_t cmd_on[] PROGMEM = 
     {
         //CONTROL_BYTE,
-        ST7558_FUNCTIONSET|BASIC,                       // Function set PD = 0, V = 0, H = 0 (basic instruction set)
-        ST7558_DISPLAY_CONROL|ON,                       // Display control D = 1, E = 0 (Normal mode)
+        ST7558_FUNCTIONSET|BASIC,                           // Function set PD = 0, V = 0, H = 0 (basic instruction set)
+        ST7558_DISPLAY_CONROL|ON,                           // Display control D = 1, E = 0 (Normal mode)
     };
 
     this->_i2cwrite_cmd(cmd_on, sizeof(cmd_on));
 }
 
 /***************************************************************/
-/** @brief  Specified contrast level. It drives a voltage 
+/** @brief  Set contrast level. It drives a voltage 
             operating by software. See 32 page of the datasheet
     @param  value   contrast level [0...127]. I recommended 70.
 */
@@ -248,38 +252,37 @@ void ST7558::setContrast(const uint8_t value)
     {
         //CONTROL_BYTE
         ST7558_FUNCTIONSET|EXTENDED,
-        uint8_t(ST7558_VOP)+(value & 0b01111111)
+        ST7558_VOP+(value & 0b01111111)
     };
     
     this->_i2cwrite_cmd(cmd_set_contrast, sizeof(cmd_set_contrast));
 }
 
 /**************************************************************/
-/** @brief This method sets all framebuffer bits to zero
+/** @brief Set all framebuffer bits to zero
 */
 /**************************************************************/
 void ST7558::clear(void) 
-{ memset(_buffer, 0, ST7558_BYTES_CAPACITY); }
+{ memset(_buffer, 0x00, ST7558_BYTES_CAPACITY); }
 
 /**************************************************************/
-/** @brief This method writes all framebuffer to the ST7558 RAM 
+/** @brief Write all framebuffer to the ST7558 RAM 
 */
 /**************************************************************/
 void ST7558::display(void)
 {   
     this->_setXY(0,0);
 
-    uint8_t maxPage = ceil(ST7558_HEIGHT / 8.0),
-            column, 
+    uint8_t column, 
             page,
             buff[96];
 
-    for (page = 0; page < maxPage; page++) 
+    for (page = 0; page < PAGES; page++)
     {
         column = 0;
         this->_setXY(column,page);
 
-        while (column < ST7558_WIDTH)
+        while (column < COLUMNS)
         {
             buff[column] = _buffer[ST7558_WIDTH * page + column];
             column++;
@@ -315,21 +318,19 @@ uint16_t ST7558::getBufferSize(void) { return ST7558_BYTES_CAPACITY; }
 /**************************************************************/
 uint8_t ST7558::width() { return ST7558_WIDTH; }
 
- /***************************************************************/
+/***************************************************************/
 /** @brief Get height of the display
     @return Height in pixels
 */
 /***************************************************************/
 uint8_t ST7558::height() { return ST7558_HEIGHT; }
 
-
+/***************************************************************/
+/** @brief Push another buffer
+*/
+/***************************************************************/
 void ST7558::pushBuffer(uint8_t *buffer, const uint16_t size)
-{
-    if (size <= ST7558_BYTES_CAPACITY) 
-    {
-        memmove(_buffer, buffer, size);
-    }
-}
+{ memmove(_buffer, buffer, size); }
 
 
 /*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
@@ -378,19 +379,16 @@ void ST7558::drawRect(const uint8_t x, const uint8_t y,
     if ((x >= 0 && x < ST7558_WIDTH) && 
         (y >= 0 && y < ST7558_HEIGHT)) 
     {
-        if (color) 
+        for (int i = x; i <= w+x; i++) 
         {
-            for (int i = x; i <= w+x; i++) 
-            {
-                this->_writePixel(i, y, color);
-                this->_writePixel(i, y+h, color);
-            }
-            for (int i = y; i <= h+y; i++) 
-            {
-                this->_writePixel(x, i, color);
-                this->_writePixel(x+w, i, color);
-            }
-        } 
+            this->_writePixel(i, y, color);
+            this->_writePixel(i, y+h, color);
+        }
+        for (int i = y; i <= h+y; i++) 
+        {
+            this->_writePixel(x, i, color);
+            this->_writePixel(x+w, i, color);
+        }
     }
 }
 
@@ -420,5 +418,33 @@ void ST7558::fillRect(const uint8_t x, const uint8_t y,
     }
 }
 
+/****************************************************************/
+/** @brief  Draw a square to the framebuffer
+    @param  x   x coordinate
+    @param  y   y coordinate
+    @param  a   square width
+    @param  color 
+*/
+/****************************************************************/
+void ST7558::drawSquare(const uint8_t x, const uint8_t y, 
+                      const uint8_t a, const uint8_t color) 
+{ drawRect(x, y, a, a, color); }
+
+/****************************************************************/
+/** @brief  Draw a filled square to the framebuffer
+    @param  x   x coordinate
+    @param  y   y coordinate
+    @param  a   square width
+    @param  color 
+*/
+/****************************************************************/
+void ST7558::fillSquare(const uint8_t x, const uint8_t y, 
+                      const uint8_t a, const uint8_t color) 
+{ fillRect(x, y, a, a, color); }
+
+/***************************************************************/
+/** @brief Fill all framebuffer 
+*/
+/***************************************************************/
 void ST7558::fillScreen(const uint8_t color) 
-{ memset(_buffer, 0xFF, ST7558_BYTES_CAPACITY); }
+{ memset(_buffer, color ? 0xFF : 0x00, ST7558_BYTES_CAPACITY); }

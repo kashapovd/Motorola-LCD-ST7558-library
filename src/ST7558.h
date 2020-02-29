@@ -14,15 +14,16 @@
  *      - resolution: 102x66, but version from the phone Motorola C115 have 96x65
  *      - on-chip display data RAM (102x66 = 6732 bit)
  *      - pinout:
- * 
- *          1 Vcc +3.3v           ________________________
- *          2 empty             /                          \
- *          3 I²C SDA           |   ST7558 LCD from C115   |
- *          4 I²C SCL           |                          |
- *          5 A0                |          96x65           |
- *          6 GND               \ ________________________ /
- *          7 VLCD                 |  |  |  |  |  |  |  |      
- *          8 RESET                1  2  3  4  5  6  7  8
+ *                               ________________________
+ *          1 Vcc +3.3v         / ______________________ \ 
+ *          2 none             | |                      | |
+ *          3 I²C SDA          | | ST7558 LCD from C115 | |
+ *          4 I²C SCL          | |                      | |
+ *          5 A0               | |        96x65         | |
+ *          6 GND              | |______________________| |
+ *          7 VLCD              \________________________/
+ *          8 RESET               |  |  |  |  |  |  |  |
+ *          .......               1  2  3  4  5  6  7  8
  * 
  * @section Dependencies
  *
@@ -49,7 +50,7 @@
 #endif
 
 #define ST7558_WIDTH    96  
-#define ST7558_HEIGHT   65
+#define ST7558_HEIGHT   65 
 
 #define BLACK 1
 #define WHITE 0
@@ -124,54 +125,43 @@ class ST7558
                             const uint8_t y,
                             const uint8_t color);
         uint8_t _rst_pin;
-
         uint8_t *_buffer;
             
     public:
 
         ST7558 (uint8_t rst_pin);
-
         ~ST7558(void);
-
         void begin(void);
-
         void off(void);
-
         void on(void);
-
         void setContrast(const uint8_t value);
-
         void invert(bool state);
-
         void clear(void);
-
         void display(void);
-
         uint8_t width(void);
-        
         uint8_t height(void);
-        
         uint8_t *getBuffer(void);
-
         uint16_t getBufferSize(void);
 
         void pushBuffer(uint8_t *buffer, 
                         const uint16_t size);
 
-        void drawPixel (const uint8_t x, 
-                        const uint8_t y, 
+        void drawBitmap(const uint8_t x, const uint8_t y, uint8_t *bitmap, 
+                        const uint8_t w, const uint8_t h, const uint8_t color);
+
+        void drawPixel (const uint8_t x, const uint8_t y, 
                         const uint8_t color);
 
-        void drawRect  (const uint8_t x, 
-                        const uint8_t y, 
-                        const uint8_t w, 
-                        const uint8_t h, 
+        void drawRect  (const uint8_t x, const uint8_t y, const uint8_t w, 
+                        const uint8_t h, const uint8_t color);
+
+        void fillRect  (const uint8_t x, const uint8_t y, const uint8_t w, 
+                        const uint8_t h, const uint8_t color);
+
+        void drawSquare(const uint8_t x, const uint8_t y, const uint8_t a, 
                         const uint8_t color);
 
-        void fillRect  (const uint8_t x, 
-                        const uint8_t y, 
-                        const uint8_t w, 
-                        const uint8_t h, 
+        void fillSquare(const uint8_t x, const uint8_t y, const uint8_t a, 
                         const uint8_t color);
 
         void fillScreen(const uint8_t color);
