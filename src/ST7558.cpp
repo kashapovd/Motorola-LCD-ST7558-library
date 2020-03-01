@@ -1,4 +1,4 @@
-/*!
+/**
  * @file ST7558.cpp
  *
  * @mainpage Arduino library for monochrome LCD (from the phone Motorola C115) based on ST7558 drivers.
@@ -61,6 +61,11 @@
 
 #define _swap(a, b) a = a ^ b ^ (b = a)
 
+#define WIRE_BEGIN          Wire.begin();
+#define WIRE_START          Wire.beginTransmission(ST7558_I2C_ADDRESS)
+#define WIRE_END            Wire.endTransmission()
+#define WIRE_WRITE(data)    Wire.write(data); 
+
 
 /*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
 //                  CONSTRUCTOR & DESTRUCTOR                    //   
@@ -75,6 +80,7 @@ ST7558::~ST7558(void)
 {
     if (_buffer) 
        free(_buffer);
+    _buffer = nullptr;
 }
 
 
@@ -84,26 +90,27 @@ ST7558::~ST7558(void)
 
 /**************************************************************/
 /** @brief This method writes instructions. 
- *  For one I²C transmission session can be transmitted 32 bytes. 
+           For one I²C transmission session can be transmitted 
+           32 bytes. 
 */
 /**************************************************************/
 void ST7558::_i2cwrite_cmd(const uint8_t *data, uint8_t n)
 {
     uint8_t bytesOut;
-    Wire.beginTransmission(ST7558_I2C_ADDRESS);
-    Wire.write(CONTROL_BYTE);                       // <- the Co byte, see datasheet
+    WIRE_START;
+    WIRE_WRITE(0x00);                       // <- the Co byte, see datasheet
     bytesOut = 1;
     while (n--) {
         if (bytesOut >= I2C_MAX) {
-            Wire.endTransmission();
-            Wire.beginTransmission(ST7558_I2C_ADDRESS);
-            Wire.write(CONTROL_BYTE);
+            WIRE_END;
+            WIRE_START;
+            WIRE_WRITE(0x00);
             bytesOut = 1; 
         }
-        Wire.write(*data++);
+        WIRE_WRITE(*data++);
         bytesOut++;
     } 
-    Wire.endTransmission();
+    WIRE_END;
 }
 
 /**************************************************************/
@@ -113,25 +120,25 @@ void ST7558::_i2cwrite_cmd(const uint8_t *data, uint8_t n)
 void ST7558::_i2cwrite_data(const uint8_t *data, uint8_t n)  
 {
     uint8_t bytesOut;
-    Wire.beginTransmission(ST7558_I2C_ADDRESS); 
-    Wire.write((uint8_t)0x40);
+    WIRE_START;
+    WIRE_WRITE(0x40);
     bytesOut = 2;
     while (n--) {
         if (bytesOut >= I2C_MAX) {
-            Wire.endTransmission();
-            Wire.beginTransmission(ST7558_I2C_ADDRESS);
-            Wire.write((uint8_t)0x40);
+            WIRE_END;
+            WIRE_START;
+            WIRE_WRITE(0x40);
             bytesOut = 2; 
         }
-        Wire.write(*data++);
+        WIRE_WRITE(*data++);
         bytesOut++;
     } 
-    Wire.endTransmission();
+    WIRE_END;
 }
 
 /**************************************************************/
 /** @brief This method makes hardware reset. ST7558 support a 
-           software reset, but it is not working with I²C :(
+           software reset, but it doesn't work with I²C :(
 */
 /**************************************************************/
 void ST7558::_hardreset(void)
@@ -144,7 +151,7 @@ void ST7558::_hardreset(void)
 }
 
 /**************************************************************/
-/** @brief Set x[0...101](columns) and 
+/** @brief This method sets x[0...101](columns) and 
            y[0...9](pages) address of RAM.
 */
 /**************************************************************/
@@ -161,12 +168,12 @@ void ST7558::_setXY(uint8_t x, uint8_t y)
 }
 
 /**************************************************************/
-/** @brief Make initial display setup
+/** @brief This method makes initial display setup
 */
 /**************************************************************/
 void ST7558::begin(void) 
 {
-    Wire.begin();
+    WIRE_BEGIN;
     _buffer = (uint8_t *)malloc(ST7558_BYTES_CAPACITY);
 
     this->clear();
@@ -226,7 +233,7 @@ void ST7558::off(void)
 }
 
 /**************************************************************/
-/** @brief Display all RAM bits. Normal mode
+/** @brief This method displays all RAM bits. Normal mode
 */
 /**************************************************************/
 void ST7558::on(void) 
@@ -242,7 +249,7 @@ void ST7558::on(void)
 }
 
 /***************************************************************/
-/** @brief  Set contrast level. It drives a voltage 
+/** @brief  This method sets contrast level. It drives a voltage 
             operating by software. See 32 page of the datasheet
     @param  value   contrast level [0...127]. I recommended 70.
 */
@@ -260,14 +267,14 @@ void ST7558::setContrast(const uint8_t value)
 }
 
 /**************************************************************/
-/** @brief Set all framebuffer bits to zero
+/** @brief  This method sets all framebuffer bits to zero
 */
 /**************************************************************/
 void ST7558::clear(void) 
 { memset(_buffer, 0x00, ST7558_BYTES_CAPACITY); }
 
 /**************************************************************/
-/** @brief Write all framebuffer to the ST7558 RAM 
+/** @brief This method writes all framebuffer to the ST7558 RAM 
 */
 /**************************************************************/
 void ST7558::display(void)
@@ -285,7 +292,7 @@ void ST7558::display(void)
 
         while (column < COLUMNS)
         {
-            buff[column] = _buffer[ST7558_WIDTH * page + column];
+            buff[column] = _buffer[ST7558_WIDTH * page + column]; 
             column++;
         }
         this->_i2cwrite_data(buff, sizeof(buff));
@@ -303,28 +310,32 @@ void ST7558::display(void)
     @return Pointer to the first framebuffer's element 
 */
 /**************************************************************/
-uint8_t *ST7558::getBuffer(void)  { return _buffer; }
+uint8_t *ST7558::getBuffer(void)  
+{ return _buffer; }
 
 /**************************************************************/
 /** @brief Get size of the framebuffer in bytes
     @return Size in bytes
 */
 /**************************************************************/
-uint16_t ST7558::getBufferSize(void) { return ST7558_BYTES_CAPACITY; }
+uint16_t ST7558::getBufferSize(void) 
+{ return ST7558_BYTES_CAPACITY; }
 
 /**************************************************************/
 /** @brief Get width of the display
     @return Width in pixels
 */
 /**************************************************************/
-uint8_t ST7558::width() { return ST7558_WIDTH; }
+uint8_t ST7558::width() 
+{ return ST7558_WIDTH; }
 
 /***************************************************************/
 /** @brief Get height of the display
     @return Height in pixels
 */
 /***************************************************************/
-uint8_t ST7558::height() { return ST7558_HEIGHT; }
+uint8_t ST7558::height() 
+{ return ST7558_HEIGHT; }
 
 /***************************************************************/
 /** @brief Push another buffer
@@ -337,15 +348,6 @@ void ST7558::pushBuffer(uint8_t *buffer, const uint16_t size)
 /*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
 //                      DRAWING FUNCTIONS                       //   
 /*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
-
-void ST7558::_writePixel(const uint8_t x, const uint8_t y, 
-                        const uint8_t color)
-{
-    color ?
-        _buffer[x + (y/8) * ST7558_WIDTH] |= (1 << y%8)
-        :
-        _buffer[x + (y/8) * ST7558_WIDTH] &= ~(1 << y%8);
-}
 
 /****************************************************************/
 /** @brief  Draw one pixel to the framebuffer
@@ -360,7 +362,10 @@ void ST7558::drawPixel (const uint8_t x, const uint8_t y,
     if ((x >= 0 && x < ST7558_WIDTH) && 
         (y >= 0 && y < ST7558_HEIGHT)) 
     {   
-        this->_writePixel(x, y, color);
+        color ?
+        _buffer[x + (y/8) * ST7558_WIDTH] |= (1 << y%8)
+        :
+        _buffer[x + (y/8) * ST7558_WIDTH] &= ~(1 << y%8);
     }
 }
 
@@ -377,19 +382,15 @@ void ST7558::drawRect(const uint8_t x, const uint8_t y,
                       const uint8_t w, const uint8_t h, 
                       const uint8_t color)
 {
-    if ((x >= 0 && x < ST7558_WIDTH) && 
-        (y >= 0 && y < ST7558_HEIGHT)) 
+    for (int i = x; i < w+x; i++) 
     {
-        for (int i = x; i < w+x; i++) 
-        {
-            this->_writePixel(i, y, color);
-            this->_writePixel(i, y+h, color);
-        }
-        for (int i = y; i < h+y; i++) 
-        {
-            this->_writePixel(x, i, color);
-            this->_writePixel(x+w, i, color);
-        }
+        this->drawPixel(i, y, color);
+        this->drawPixel(i, y+h, color);
+    }
+    for (int i = y; i < h+y; i++) 
+    {
+        this->drawPixel(x, i, color);
+        this->drawPixel(x+w, i, color);
     }
 }
 
@@ -406,15 +407,11 @@ void ST7558::fillRect(const uint8_t x, const uint8_t y,
                       const uint8_t w, const uint8_t h, 
                       const uint8_t color) 
 {
-    if ((x >= 0 && x < ST7558_WIDTH) && 
-        (y >= 0 && y < ST7558_HEIGHT)) 
+    for (int i = y; i < h+y; i++) 
     {
-        for (int i = y; i < h+y; i++) 
+        for (int j = x; j < w+x; j++) 
         {
-            for (int j = x; j < w+x; j++) 
-            {
-                this->_writePixel(j, i, color);
-            }
+            this->drawPixel(j, i, color);
         }
     }
 }
@@ -429,7 +426,7 @@ void ST7558::fillRect(const uint8_t x, const uint8_t y,
 /****************************************************************/
 void ST7558::drawSquare(const uint8_t x, const uint8_t y, 
                       const uint8_t a, const uint8_t color) 
-{ drawRect(x, y, a, a, color); }
+{ this->drawRect(x, y, a, a, color); }
 
 /****************************************************************/
 /** @brief  Draw a filled square to the framebuffer
@@ -441,7 +438,7 @@ void ST7558::drawSquare(const uint8_t x, const uint8_t y,
 /****************************************************************/
 void ST7558::fillSquare(const uint8_t x, const uint8_t y, 
                       const uint8_t a, const uint8_t color) 
-{ fillRect(x, y, a, a, color); }
+{ this->fillRect(x, y, a, a, color); }
 
 /***************************************************************/
 /** @brief Fill all framebuffer 
@@ -471,11 +468,11 @@ void ST7558::drawLine(const uint8_t x1, const uint8_t y1, const uint8_t x2, cons
     uint8_t x = x1;
     uint8_t y = y1;
 
-    _writePixel(x2, y2, color);
+    this->drawPixel(x2, y2, color);
     while(x != x2 || y != y2) 
     {
         const int16_t error2 = error * 2;
-        _writePixel(x, y, color);
+        this->drawPixel(x, y, color);
         if(error2 > -dy) 
         {
             error -= dy;
@@ -520,7 +517,7 @@ void ST7558::drawLineDDA(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2, const u
     {
         x += dsx;
         y += dsy;
-        _writePixel(round(x), round(y), color);
+        this->drawPixel(round(x), round(y), color);
     }
 }
 
@@ -538,7 +535,7 @@ void ST7558::drawLineDDA(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2, const u
 void ST7558::drawTriangle(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2, 
                           uint8_t x3, uint8_t y3, const uint8_t color) 
 {
-    drawLineDDA(x1,y1,x2,y2,color);
-    drawLineDDA(x2,y2,x3,y3,color);
-    drawLineDDA(x3,y3,x1,y1,color);
+    this->drawLine(x1,y1,x2,y2,color);
+    this->drawLine(x2,y2,x3,y3,color);
+    this->drawLine(x3,y3,x1,y1,color);
 }

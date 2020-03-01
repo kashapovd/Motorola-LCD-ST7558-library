@@ -1,4 +1,4 @@
-/*!
+/**
  * @file ST7558.h
  *
  * @mainpage Arduino library for monochrome LCD (from the phone Motorola C115) based on ST7558 drivers.
@@ -49,6 +49,8 @@
     #include "WProgram.h"
 #endif
 
+#include <Wire.h>
+
 #define ST7558_WIDTH    96  
 #define ST7558_HEIGHT   65 
 
@@ -96,13 +98,17 @@
 
 /* H="1", ext. mode */
 #define ST7558_BOOST                    0b00001000  // 0x08 <- see datasheet
+
     #define VDD2x2                      0b00000000  // 0x00 <- see datasheet
     #define VDD2x3                      0b00000001  // 0x01 <- see datasheet
     #define VDD2x4                      0b00000010  // 0x02 <- see datasheet
     #define VDD2x5                      0b00000011  // 0x03 <- see datasheet
+
 #define ST7558_SYSTEM_BIAS              0b00010010  // 0x12 <- see datasheet
 #define ST7558_VOP                      0b10000000  // 0x80 <- see datasheet
+
     #define DEFAULT_VOP                 0b01000000  // 0x40 <- see datasheet
+    
 //#define SW_INTERNAL_RGISTER_INIT1     0b00001110  // 0x0e <- see datasheet
 //#define SW_INTERNAL_RGISTER_INIT2     0b00001001  // 0x09 <- see datasheet
 
@@ -121,9 +127,6 @@ class ST7558
         void _setXY (uint8_t x, 
                      uint8_t y);
 
-        void _writePixel   (const uint8_t x, 
-                            const uint8_t y,
-                            const uint8_t color);
         uint8_t _rst_pin;
         uint8_t *_buffer;
             
