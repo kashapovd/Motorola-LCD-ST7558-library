@@ -47,26 +47,33 @@
 #endif
 
 #ifdef __AVR__
-    #include <util/delay.h>
-    #include <avr/pgmspace.h>
+#include <avr/pgmspace.h>
+#elif defined(ESP8266) || defined(ESP32)
+#include <pgmspace.h>
 #endif
 
 #include <Wire.h>
 #include "ST7558.h"
+#include "fonts.h"
 
-#define ST7558_BYTES_CAPACITY ST7558_WIDTH * (ST7558_HEIGHT + 7) / 8
+#define ST7558_BYTES_CAPACITY   ST7558_WIDTH * (ST7558_HEIGHT + 7) / 8
 
-#define COLUMNS ST7558_WIDTH
-#define PAGES ST7558_BYTES_CAPACITY / COLUMNS
+#define COLUMNS                 ST7558_WIDTH
+#define PAGES                   ST7558_BYTES_CAPACITY / COLUMNS
 
-#define _swap(a, b) a = a ^ b ^ (b = a)
+#define _swap(a, b)             a = a ^ b ^ (b = a)
 
-#define WIRE_BEGIN          Wire.begin();
-#define WIRE_START          Wire.beginTransmission(ST7558_I2C_ADDRESS)
-#define WIRE_END            Wire.endTransmission()
-#define WIRE_WRITE(data)    Wire.write(data); 
+#ifndef pgm_read_byte
+#define pgm_read_byte(addr) (*(const unsigned char *)(addr))
+#endif
 
+#define WIRE_BEGIN              Wire.begin();
+#define WIRE_START              Wire.beginTransmission(ST7558_I2C_ADDRESS)
+#define WIRE_END                Wire.endTransmission()
+#define WIRE_WRITE(data)        Wire.write(data); 
 
+#define CHAR_WIDTH              5
+#define CHAR_HEIGH              8
 /*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
 //                  CONSTRUCTOR & DESTRUCTOR                    //   
 /*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
@@ -75,6 +82,8 @@ ST7558::ST7558(uint8_t rst_pin)
 {
     _buffer = nullptr;
     _rst_pin = rst_pin;
+    cursor_x = 0;
+    cursor_y = 0;
 }
 ST7558::~ST7558(void) 
 {
@@ -157,7 +166,7 @@ void ST7558::_hardreset(void)
 /**************************************************************/
 void ST7558::_setXY(uint8_t x, uint8_t y)
 {
-    uint8_t cmd_setxy[] PROGMEM = 
+    uint8_t cmd_setxy[] = 
     {
         //CONTROL_BYTE
         ST7558_FUNCTIONSET|BASIC,           // Function set PD = 0, V = 0, H = 0 (basic instruction set)
@@ -174,12 +183,13 @@ void ST7558::_setXY(uint8_t x, uint8_t y)
 void ST7558::begin(void) 
 {
     WIRE_BEGIN;
+    Serial.begin(9600);
     _buffer = (uint8_t *)malloc(ST7558_BYTES_CAPACITY);
 
     this->clear();
     this->_hardreset();
 
-    uint8_t cmd_init[] PROGMEM = 
+    uint8_t cmd_init[] = 
     {
         //CONTROL_BYTE
         ST7558_EXTENDED_DISPAY_CONTROL,         // Ext. display control | MX = 1, MY = 1
@@ -208,7 +218,7 @@ void ST7558::begin(void)
 /****************************************************************/
 void ST7558::invert(bool state) 
 {
-    uint8_t cmd_invert[] PROGMEM = 
+    uint8_t cmd_invert[] = 
     {
         //CONTROL_BYTE,
         ST7558_FUNCTIONSET|BASIC,                           // Function set PD = 0, V = 0, H = 0 (basic instruction set)
@@ -223,7 +233,7 @@ void ST7558::invert(bool state)
 /**************************************************************/
 void ST7558::off(void) 
 {
-    uint8_t cmd_off[] PROGMEM = 
+    uint8_t cmd_off[] = 
     {
         //CONTROL_BYTE,
         ST7558_FUNCTIONSET|BASIC,                           // Function set PD = 0, V = 0, H = 0 (basic instruction set)
@@ -238,7 +248,7 @@ void ST7558::off(void)
 /**************************************************************/
 void ST7558::on(void) 
 {
-    uint8_t cmd_on[] PROGMEM = 
+    uint8_t cmd_on[] = 
     {
         //CONTROL_BYTE,
         ST7558_FUNCTIONSET|BASIC,                           // Function set PD = 0, V = 0, H = 0 (basic instruction set)
@@ -256,7 +266,7 @@ void ST7558::on(void)
 /****************************************************************/
 void ST7558::setContrast(const uint8_t value) 
 {
-    uint8_t cmd_set_contrast[] PROGMEM = 
+    uint8_t cmd_set_contrast[] = 
     {
         //CONTROL_BYTE
         ST7558_FUNCTIONSET|EXTENDED,
@@ -326,7 +336,7 @@ uint16_t ST7558::getBufferSize(void)
     @return Width in pixels
 */
 /**************************************************************/
-uint8_t ST7558::width() 
+uint8_t ST7558::width(void) 
 { return ST7558_WIDTH; }
 
 /***************************************************************/
@@ -334,7 +344,7 @@ uint8_t ST7558::width()
     @return Height in pixels
 */
 /***************************************************************/
-uint8_t ST7558::height() 
+uint8_t ST7558::height(void) 
 { return ST7558_HEIGHT; }
 
 /***************************************************************/
@@ -538,4 +548,28 @@ void ST7558::drawTriangle(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2,
     this->drawLine(x1,y1,x2,y2,color);
     this->drawLine(x2,y2,x3,y3,color);
     this->drawLine(x3,y3,x1,y1,color);
+}
+
+void ST7558::setCursor(const uint8_t x, const uint8_t y) 
+{
+    cursor_x = x;
+    cursor_y = y;    
+}
+
+void ST7558::drawChar(uint8_t x, uint8_t y, char c, const uint8_t color)
+{
+    for (uint8_t i = 0; i < CHAR_WIDTH; i++) 
+    {   
+        uint8_t ch_column = pgm_read_byte(&font[(c - 32)*CHAR_WIDTH + i]);
+        
+        for (uint8_t j = 0; j < CHAR_HEIGH; j++, ch_column >>=1)
+        {
+            drawPixel(x+i, y+j, (ch_column & 1) ? color : !color);
+        }
+    }   
+}
+
+void ST7558::print(const char *string, const uint8_t color) 
+{
+
 }

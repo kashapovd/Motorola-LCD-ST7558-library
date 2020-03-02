@@ -49,8 +49,6 @@
     #include "WProgram.h"
 #endif
 
-#include <Wire.h>
-
 #define ST7558_WIDTH    96  
 #define ST7558_HEIGHT   65 
 
@@ -129,6 +127,8 @@ class ST7558
 
         uint8_t _rst_pin;
         uint8_t *_buffer;
+        uint8_t cursor_x;
+        uint8_t cursor_y;
             
     public:
 
@@ -178,5 +178,11 @@ class ST7558
         void drawTriangle  (const uint8_t x1, const uint8_t y1, const uint8_t x2, 
                             const uint8_t y2, uint8_t x3, uint8_t y3, 
                             const uint8_t color);
+
+        void setCursor(const uint8_t x, const uint8_t y);
+
+        void drawChar(uint8_t x, uint8_t y,const char c, const uint8_t color);
+
+        void print(const char *string, const uint8_t color);
 };
 #endif
