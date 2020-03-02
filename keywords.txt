@@ -33,6 +33,10 @@ fillScreen	KEYWORD2
 drawLine	KEYWORD2
 drawLineDDA	KEYWORD2
 drawTriangle	KEYWORD2
+drawChar	KEYWORD2
+setCursor	KEYWORD2
+print		KEYWORD2
+	
 #######################################
 # Constants (LITERAL1)
 #######################################
