@@ -61,30 +61,33 @@
 #define COLUMNS                 ST7558_WIDTH
 #define PAGES                   ST7558_BYTES_CAPACITY / COLUMNS
 
-#define _swap(a, b)             a = a ^ b ^ (b = a)
+#define _swap(a, b) \
+    a = a ^ b;      \
+    b = a ^ b;      \
+    a = a ^ b;        
 
-#ifndef pgm_read_byte
-#define pgm_read_byte(addr) (*(const unsigned char *)(addr))
-#endif
-
-#define WIRE_BEGIN              Wire.begin();
+#define WIRE_BEGIN              Wire.begin() 
 #define WIRE_START              Wire.beginTransmission(ST7558_I2C_ADDRESS)
 #define WIRE_END                Wire.endTransmission()
-#define WIRE_WRITE(data)        Wire.write(data); 
+#define WIRE_WRITE(data)        Wire.write(data)  
 
 #define CHAR_WIDTH              5
-#define CHAR_HEIGH              8
+#define CHAR_HEIGHT             8
+
+
 /*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
 //                  CONSTRUCTOR & DESTRUCTOR                    //   
 /*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
 
-ST7558::ST7558(uint8_t rst_pin)
+ST7558::ST7558(const uint8_t rst_pin)
 {
     _buffer = nullptr;
     _rst_pin = rst_pin;
-    cursor_x = 0;
-    cursor_y = 0;
+    cursor_x = cursor_y = 0;
+    textcolor = BLACK;
+    textbgcolor = WHITE;
 }
+
 ST7558::~ST7558(void) 
 {
     if (_buffer) 
@@ -205,7 +208,6 @@ void ST7558::begin(void)
         ST7558_YADDR,                         
         ST7558_XADDR                          
     };
-
     this->_i2cwrite_cmd(cmd_init, sizeof(cmd_init)); 
 }
 
@@ -254,7 +256,6 @@ void ST7558::on(void)
         ST7558_FUNCTIONSET|BASIC,                           // Function set PD = 0, V = 0, H = 0 (basic instruction set)
         ST7558_DISPLAY_CONROL|ON,                           // Display control D = 1, E = 0 (Normal mode)
     };
-
     this->_i2cwrite_cmd(cmd_on, sizeof(cmd_on));
 }
 
@@ -550,26 +551,63 @@ void ST7558::drawTriangle(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2,
     this->drawLine(x3,y3,x1,y1,color);
 }
 
+/****************************************************************/
+/** @brief  Set custom text color(ha-ha)(monochrome lcd)
+    @param  color   color. BLACK or WHITE
+/****************************************************************/
+void ST7558::setTextColor(const uint8_t color) 
+{
+    textcolor = color;
+}
+
+/****************************************************************/
+/** @brief  Set custom cursor position
+    @param  x   x coordinate position
+    @param  y   y coordinate position
+*/
+/****************************************************************/
 void ST7558::setCursor(const uint8_t x, const uint8_t y) 
 {
     cursor_x = x;
     cursor_y = y;    
 }
 
-void ST7558::drawChar(uint8_t x, uint8_t y, char c, const uint8_t color)
+/****************************************************************/
+/** @brief  Draw a single char
+    @param  x1  x coordinate of first vertex
+    @param  y1  y coordinate of first vertex
+    @param  c   char what will drawed
+    @param  color 
+*/
+/****************************************************************/
+void ST7558::drawChar(const uint8_t x, const uint8_t y, char c, const uint8_t color)
 {
     for (uint8_t i = 0; i < CHAR_WIDTH; i++) 
     {   
         uint8_t ch_column = pgm_read_byte(&font[(c - 32)*CHAR_WIDTH + i]);
-        
-        for (uint8_t j = 0; j < CHAR_HEIGH; j++, ch_column >>=1)
+        for (uint8_t j = 0; j < CHAR_HEIGHT; j++, ch_column >>=1)
         {
-            drawPixel(x+i, y+j, (ch_column & 1) ? color : !color);
+            this->drawPixel(x+i, y+j, (ch_column & 1) ? color : !color);
         }
     }   
 }
 
-void ST7558::print(const char *string, const uint8_t color) 
+/****************************************************************/
+/** @brief  Redefine a write method for Print.h
+    @param  c   input char
+*/
+/****************************************************************/
+size_t ST7558::write(const uint8_t c)
 {
-
+    if (c == '\n') {
+        cursor_x = 0;
+        cursor_y += 8;
+    }
+    if (cursor_x > ST7558_WIDTH) {
+        cursor_x = 0;
+        cursor_y += 8;
+    }
+    drawChar(cursor_x, cursor_y, c, textcolor);
+    cursor_x+=6;
+    return 1;
 }

@@ -110,7 +110,7 @@
 //#define SW_INTERNAL_RGISTER_INIT1     0b00001110  // 0x0e <- see datasheet
 //#define SW_INTERNAL_RGISTER_INIT2     0b00001001  // 0x09 <- see datasheet
 
-class ST7558
+class ST7558 : public Print
 {
     private:
 
@@ -129,10 +129,12 @@ class ST7558
         uint8_t *_buffer;
         uint8_t cursor_x;
         uint8_t cursor_y;
+        uint8_t textcolor;
+        uint8_t textbgcolor;
             
     public:
 
-        ST7558 (uint8_t rst_pin);
+        ST7558 (const uint8_t rst_pin);
         ~ST7558(void);
         void begin(void);
         void off(void);
@@ -180,9 +182,15 @@ class ST7558
                             const uint8_t color);
 
         void setCursor(const uint8_t x, const uint8_t y);
+        void setTextColor(const uint8_t color);
 
-        void drawChar(uint8_t x, uint8_t y,const char c, const uint8_t color);
+        void drawChar(const uint8_t x, const uint8_t y, const char c, const uint8_t color);
 
-        void print(const char *string, const uint8_t color);
+        using Print::write;
+        #if ARDUINO >= 100
+            virtual size_t write(const uint8_t c);
+        #else
+            virtual void write(const uint8_t c);
+        #endif
 };
 #endif
