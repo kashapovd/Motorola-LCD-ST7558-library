@@ -1,17 +1,16 @@
 /**
  * @file ST7558.h
  *
- * @mainpage Arduino library for monochrome LCD (from the phone Motorola C115) based on ST7558 drivers.
+ * @mainpage Arduino library for monochrome LCD (from the phone Motorola C115) based on ST7558 driver.
  *
  * @section Introduction
  *
  *  ST7558 supports I²C, SPI or 8-bit parallel interface(8080 and 6800) to communicate. 
- *  I2C requires 2 pins (SCL and SDA) and RESET pin. SPI requires 4 pins and RESET pin 
- *  (optionaly, software RESET can be work with SPI).
- *  My LCD version (from the phone Motorola C115) doesn't have SPI and 8-bit parallel interface outputs, only I²C.
+ *  I2C requires 2 pins (SCL and SDA) and RESET pin. SPI requires 4 pins and RESET pin.
+ *  My LCD version (from the phone Motorola C115) doesn't has SPI and 8-bit parallel interface outputs, only I²C.
  *
  *  ST7558:
- *      - resolution: 102x66, but version from the phone Motorola C115 have 96x65
+ *      - resolution: 102x66, but version from the phone Motorola C115 has 96x65 visible  pixels
  *      - on-chip display data RAM (102x66 = 6732 bit)
  *      - pinout:
  *                               ________________________
@@ -27,7 +26,7 @@
  * 
  * @section Dependencies
  *
- *  no dependencies, yet
+ *  arduino libraries
  *
  * @section Author
  *
@@ -114,17 +113,10 @@ class ST7558 : public Print
 {
     private:
 
-        void _i2cwrite_cmd (const uint8_t *data, 
-                            uint8_t n);
-
-        void _i2cwrite_data(const uint8_t *data, 
-                            uint8_t n);
-
+        void _i2cwrite_cmd(const uint8_t *data, uint8_t n);
+        void _i2cwrite_data(const uint8_t *data, uint8_t n);
         void _hardreset(void);
-
-        void _setXY (uint8_t x, 
-                     uint8_t y);
-
+        void _setXY (uint8_t x, uint8_t y);
         uint8_t _rst_pin;
         uint8_t *_buffer;
         uint8_t cursor_x;
@@ -154,14 +146,14 @@ class ST7558 : public Print
         void drawBitmap(const uint8_t x, const uint8_t y, uint8_t *bitmap, 
                         const uint8_t w, const uint8_t h, const uint8_t color);
 
-        void drawPixel (const uint8_t x, const uint8_t y, 
-                        const uint8_t color);
+        void drawPixel(const uint8_t x, const uint8_t y, 
+                       const uint8_t color);
 
-        void drawRect  (const uint8_t x, const uint8_t y, const uint8_t w, 
-                        const uint8_t h, const uint8_t color);
+        void drawRect(const uint8_t x, const uint8_t y, const uint8_t w, 
+                      const uint8_t h, const uint8_t color);
 
-        void fillRect  (const uint8_t x, const uint8_t y, const uint8_t w, 
-                        const uint8_t h, const uint8_t color);
+        void fillRect(const uint8_t x, const uint8_t y, const uint8_t w, 
+                      const uint8_t h, const uint8_t color);
 
         void drawSquare(const uint8_t x, const uint8_t y, const uint8_t a, 
                         const uint8_t color);
@@ -171,15 +163,15 @@ class ST7558 : public Print
 
         void fillScreen(const uint8_t color);
 
-        void drawLine  (const uint8_t x1, const uint8_t y1, const uint8_t x2, 
-                        const uint8_t y2, const uint8_t color);
+        void drawLine(const uint8_t x1, const uint8_t y1, const uint8_t x2, 
+                      const uint8_t y2, const uint8_t color);
 
-        void drawLineDDA   (uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2, 
-                            const uint8_t color);
+        void drawLineDDA(const uint8_t x1, const uint8_t y1, const uint8_t x2, 
+                         const uint8_t y2, const uint8_t color);
 
-        void drawTriangle  (const uint8_t x1, const uint8_t y1, const uint8_t x2, 
-                            const uint8_t y2, uint8_t x3, uint8_t y3, 
-                            const uint8_t color);
+        void drawTriangle(const uint8_t x1, const uint8_t y1, const uint8_t x2, 
+                          const uint8_t y2, const uint8_t x3, const uint8_t y3, 
+                          const uint8_t color);
 
         void setCursor(const uint8_t x, const uint8_t y);
         void setTextColor(const uint8_t color);
