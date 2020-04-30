@@ -7,7 +7,7 @@
  *
  *  ST7558 supports I²C, SPI or 8-bit parallel interface(8080 and 6800) to communicate. 
  *  I2C requires 2 pins (SCL and SDA) and RESET pin. SPI requires 4 pins and RESET pin.
- *  My LCD version (from the phone Motorola C115) doesn't has SPI and 8-bit parallel interface outputs, only I²C.
+ *  My LCD version (from the phone Motorola C115) doesn't have SPI and 8-bit parallel interface outputs, only I²C.
  *
  *  ST7558:
  *      - resolution: 102x66, but version from the phone Motorola C115 has 96x65 visible  pixels
@@ -26,7 +26,7 @@
  * 
  * @section Dependencies
  *
- *  arduino libraries
+ *  ADAFRUIT GRAPHIC LIB & arduino libraries
  *
  * @section Author
  *
@@ -47,9 +47,10 @@
 #else
     #include "WProgram.h"
 #endif
+#include <Adafruit_GFX.h>
 
 #define ST7558_WIDTH    96  
-#define ST7558_HEIGHT   65 
+#define ST7558_HEIGHT   65
 
 #define BLACK 1
 #define WHITE 0
@@ -109,8 +110,8 @@
 //#define SW_INTERNAL_RGISTER_INIT1     0b00001110  // 0x0e <- see datasheet
 //#define SW_INTERNAL_RGISTER_INIT2     0b00001001  // 0x09 <- see datasheet
 
-class ST7558 : public Print
-{
+class ST7558 : public Adafruit_GFX {
+            
     private:
 
         void _i2cwrite_cmd(const uint8_t *data, uint8_t n);
@@ -119,70 +120,63 @@ class ST7558 : public Print
         void _setXY (uint8_t x, uint8_t y);
         uint8_t _rst_pin;
         uint8_t *_buffer;
-        uint8_t cursor_x;
-        uint8_t cursor_y;
-        uint8_t textcolor;
-        uint8_t textbgcolor;
-            
+
     public:
 
-        ST7558 (const uint8_t rst_pin);
+        ST7558(uint8_t rst_pin);
         ~ST7558(void);
         void begin(void);
-        void off(void);
-        void on(void);
+        void displayOff(void);
+        void displayOn(void);
         void setContrast(const uint8_t value);
-        void invert(bool state);
-        void clear(void);
+        void invertDisplay(bool state);
+        void clearDisplay(void);
         void display(void);
-        uint8_t width(void);
-        uint8_t height(void);
         uint8_t *getBuffer(void);
         uint16_t getBufferSize(void);
 
+        void drawPixel(int16_t x, int16_t y, 
+                        uint16_t color);
+        
+        void drawRect(int16_t x, int16_t y, int16_t w, 
+                      int16_t h, uint16_t color);
+
+        void fillRect(int16_t x, int16_t y, int16_t w, 
+                      int16_t h, uint16_t color);
+
+        void drawSquare(int16_t x, int16_t y, int16_t a, 
+                        uint16_t color);    
+
+        void fillSquare(int16_t x, int16_t y, int16_t a, 
+                        uint16_t color);   
+
+        void fillScreen(int16_t color);
+         
         void pushBuffer(uint8_t *buffer, 
                         const uint16_t size);
 
-        void drawBitmap(const uint8_t x, const uint8_t y, uint8_t *bitmap, 
-                        const uint8_t w, const uint8_t h, const uint8_t color);
 
-        void drawPixel(const uint8_t x, const uint8_t y, 
-                       const uint8_t color);
+        // old code
+        // void drawLine(int16_t x1, int16_t y1, int16_t x2, 
+        //               int16_t y2, int16_t color);
 
-        void drawRect(const uint8_t x, const uint8_t y, const uint8_t w, 
-                      const uint8_t h, const uint8_t color);
+        // void drawLineDDA(int16_t x1, int16_t y1, int16_t x2, 
+        //                  int16_t y2, int16_t color);
 
-        void fillRect(const uint8_t x, const uint8_t y, const uint8_t w, 
-                      const uint8_t h, const uint8_t color);
+        // void drawTriangle(int16_t x1, int16_t y1, int16_t x2, 
+        //                   int16_t y2, int16_t x3, int16_t y3, 
+        //                   int16_t color);
 
-        void drawSquare(const uint8_t x, const uint8_t y, const uint8_t a, 
-                        const uint8_t color);
+        // void setCursor(int16_t x, int16_t y);
+        // void setTextColor(int16_t color);
 
-        void fillSquare(const uint8_t x, const uint8_t y, const uint8_t a, 
-                        const uint8_t color);
+        // void drawChar(int16_t x, int16_t y, const char c, int16_t color);
 
-        void fillScreen(const uint8_t color);
-
-        void drawLine(const uint8_t x1, const uint8_t y1, const uint8_t x2, 
-                      const uint8_t y2, const uint8_t color);
-
-        void drawLineDDA(const uint8_t x1, const uint8_t y1, const uint8_t x2, 
-                         const uint8_t y2, const uint8_t color);
-
-        void drawTriangle(const uint8_t x1, const uint8_t y1, const uint8_t x2, 
-                          const uint8_t y2, const uint8_t x3, const uint8_t y3, 
-                          const uint8_t color);
-
-        void setCursor(const uint8_t x, const uint8_t y);
-        void setTextColor(const uint8_t color);
-
-        void drawChar(const uint8_t x, const uint8_t y, const char c, const uint8_t color);
-
-        using Print::write;
-        #if ARDUINO >= 100
-            virtual size_t write(const uint8_t c);
-        #else
-            virtual void write(const uint8_t c);
-        #endif
+        // using Print::write;
+        // #if ARDUINO >= 100
+        //     virtual size_t write(int16_t c);
+        // #else
+        //     virtual void write(int16_t c);
+        // #endif
 };
 #endif

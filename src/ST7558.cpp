@@ -7,7 +7,7 @@
  *
  *  ST7558 supports I²C, SPI or 8-bit parallel interface(8080 and 6800) to communicate. 
  *  I2C requires 2 pins (SCL and SDA) and RESET pin. SPI requires 4 pins and RESET pin.
- *  My LCD version (from the phone Motorola C115) doesn't has SPI and 8-bit parallel interface outputs, only I²C.
+ *  My LCD version (from the phone Motorola C115) doesn't have SPI and 8-bit parallel interface outputs, only I²C.
  *
  *  ST7558:
  *      - resolution: 102x66, but version from the phone Motorola C115 has 96x65 visible pixels
@@ -26,7 +26,7 @@
  *  
  * @section Dependencies
  *
- *  arduino libraries
+ *  ADAFRUIT GRAPHIC LIB & arduino libraries
  *
  * @section Author
  *
@@ -39,52 +39,33 @@
  * 
  */
 
-#if defined(ARDUINO) && ARDUINO >= 100
-    #include "Arduino.h"
-#else
-    #include "WProgram.h"
-#endif
-
+#include "ST7558.h"
+#include <Wire.h>
+#include <SPI.h>  // just for adafruit gfx lib, don't pay attention
 #ifdef __AVR__
 #include <avr/pgmspace.h>
 #elif defined(ESP8266) || defined(ESP32)
 #include <pgmspace.h>
 #endif
 
-#include <Wire.h>
-#include "ST7558.h"
-#include "fonts.h"
-
 #define ST7558_BYTES_CAPACITY   ST7558_WIDTH * (ST7558_HEIGHT + 7) / 8
-
 #define COLUMNS                 ST7558_WIDTH
 #define PAGES                   ST7558_BYTES_CAPACITY / COLUMNS
-
-#define _swap(a, b) \
-    a = a ^ b;      \
-    b = a ^ b;      \
-    a = a ^ b;        
 
 #define WIRE_BEGIN              Wire.begin() 
 #define WIRE_START              Wire.beginTransmission(ST7558_I2C_ADDRESS)
 #define WIRE_END                Wire.endTransmission()
 #define WIRE_WRITE(data)        Wire.write(data)  
 
-#define CHAR_WIDTH              5
-#define CHAR_HEIGHT             8
-
 
 /*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
 //                  CONSTRUCTOR & DESTRUCTOR                    //   
 /*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
 
-ST7558::ST7558(const uint8_t rst_pin) {
+ST7558::ST7558(uint8_t rst_pin) : Adafruit_GFX (ST7558_WIDTH, ST7558_HEIGHT) {
     
     _buffer = nullptr;
     _rst_pin = rst_pin;
-    cursor_x = cursor_y = 0;
-    textcolor = BLACK;
-    textbgcolor = WHITE;
 }
 
 ST7558::~ST7558(void) {
@@ -160,9 +141,9 @@ void ST7558::_hardreset(void) {
     
     pinMode(_rst_pin, OUTPUT);
     digitalWrite(_rst_pin, LOW);            // Bring reset low
-    _delay_ms(5);                           // Wait 5ms
+    delay(5);                           // Wait 5ms
     digitalWrite(_rst_pin, HIGH);           // Bring out of reset
-    _delay_ms(5);                           // Wait 5ms
+    delay(5);                           // Wait 5ms
 }
 
 /**************************************************************/
@@ -176,8 +157,8 @@ void ST7558::_setXY(uint8_t x, uint8_t y) {
 
         //CONTROL_BYTE
         ST7558_FUNCTIONSET | BASIC,         // Function set PD = 0, V = 0, H = 0 (basic instruction set)
-        ST7558_XADDR+x,
-        ST7558_YADDR+y
+        ST7558_XADDR + x,
+        ST7558_YADDR + y
     };
     _i2cwrite_cmd(cmd_setxy, sizeof(cmd_setxy));
 }
@@ -189,10 +170,9 @@ void ST7558::_setXY(uint8_t x, uint8_t y) {
 void ST7558::begin(void) {
     
     WIRE_BEGIN;
-    Serial.begin(9600);
     _buffer = (uint8_t *)malloc(ST7558_BYTES_CAPACITY);
 
-    clear();
+    clearDisplay();
     _hardreset();
 
     // main lcd initialization 
@@ -222,7 +202,7 @@ void ST7558::begin(void) {
     @param  state   true - mode is on, false - off
 */
 /****************************************************************/
-void ST7558::invert(bool state) {
+void ST7558::invertDisplay(bool state) {
     
     uint8_t cmd_invert[] = {
 
@@ -237,7 +217,7 @@ void ST7558::invert(bool state) {
 /** @brief Just display off, not power down
 */
 /**************************************************************/
-void ST7558::off(void) {
+void ST7558::displayOff(void) {
     
     uint8_t cmd_off[] = {
 
@@ -252,7 +232,7 @@ void ST7558::off(void) {
 /** @brief This method displays all RAM bits. Normal mode
 */
 /**************************************************************/
-void ST7558::on(void) {
+void ST7558::displayOn(void) {
     
     uint8_t cmd_on[] = {
 
@@ -275,7 +255,7 @@ void ST7558::setContrast(const uint8_t value) {
 
         //CONTROL_BYTE
         ST7558_FUNCTIONSET | EXTENDED,
-        ST7558_VOP + (value & 0b01111111)
+        ST7558_VOP + ( value & 0b01111111)
     };
     
     _i2cwrite_cmd(cmd_set_contrast, sizeof(cmd_set_contrast));
@@ -285,7 +265,7 @@ void ST7558::setContrast(const uint8_t value) {
 /** @brief  This method sets all framebuffer bits to zero
 */
 /**************************************************************/
-void ST7558::clear(void) { 
+void ST7558::clearDisplay(void) { 
     memset(_buffer, 0x00, ST7558_BYTES_CAPACITY); 
 }
 
@@ -338,23 +318,23 @@ uint16_t ST7558::getBufferSize(void) {
     return ST7558_BYTES_CAPACITY; 
 }
 
-/**************************************************************/
-/** @brief Get width of the display
-    @return Width in pixels
-*/
-/**************************************************************/
-uint8_t ST7558::width(void) { 
-    return ST7558_WIDTH; 
-}
+// /**************************************************************/
+// /** @brief Get width of the display
+//     @return Width in pixels
+// */
+// /**************************************************************/
+// uint8_t ST7558::width(void) { 
+//     return ST7558_WIDTH; 
+// }
 
-/***************************************************************/
-/** @brief Get height of the display
-    @return Height in pixels
-*/
-/***************************************************************/
-uint8_t ST7558::height(void) { 
-    return ST7558_HEIGHT; 
-}
+// /***************************************************************/
+// /** @brief Get height of the display
+//     @return Height in pixels
+// */
+// /***************************************************************/
+// uint8_t ST7558::height(void) { 
+//     return ST7558_HEIGHT; 
+// }
 
 /***************************************************************/
 /** @brief Push another buffer
@@ -376,8 +356,8 @@ void ST7558::pushBuffer(uint8_t *buffer, const uint16_t size) {
     @param  color 
 */
 /****************************************************************/
-void ST7558::drawPixel (const uint8_t x, const uint8_t y, 
-                        const uint8_t color) {
+void ST7558::drawPixel (int16_t x, int16_t y, 
+                     uint16_t color) {
 
     if ((x >= 0 && x < ST7558_WIDTH) 
     && (y >= 0 && y < ST7558_HEIGHT)) {
@@ -398,9 +378,9 @@ void ST7558::drawPixel (const uint8_t x, const uint8_t y,
     @param  color 
 */
 /****************************************************************/
-void ST7558::drawRect(const uint8_t x, const uint8_t y, 
-                      const uint8_t w, const uint8_t h, 
-                      const uint8_t color) {
+void ST7558::drawRect(int16_t x, int16_t y, 
+                      int16_t w, int16_t h, 
+                      uint16_t color) {
     
     for (int i = x; i < w+x; i++) {
 
@@ -423,9 +403,9 @@ void ST7558::drawRect(const uint8_t x, const uint8_t y,
     @param  color 
 */
 /****************************************************************/
-void ST7558::fillRect(const uint8_t x, const uint8_t y, 
-                      const uint8_t w, const uint8_t h, 
-                      const uint8_t color) {
+void ST7558::fillRect(int16_t x, int16_t y, 
+                      int16_t w, int16_t h, 
+                      uint16_t color) {
 
     for (int i = y; i < h+y; i++) {
 
@@ -444,8 +424,8 @@ void ST7558::fillRect(const uint8_t x, const uint8_t y,
     @param  color 
 */
 /****************************************************************/
-void ST7558::drawSquare(const uint8_t x, const uint8_t y, 
-                        const uint8_t a, const uint8_t color) {
+void ST7558::drawSquare(int16_t x, int16_t y, 
+                      int16_t a, uint16_t color) {
     drawRect(x, y, a, a, color); 
 }
 
@@ -457,8 +437,8 @@ void ST7558::drawSquare(const uint8_t x, const uint8_t y,
     @param  color 
 */
 /****************************************************************/
-void ST7558::fillSquare(const uint8_t x, const uint8_t y, 
-                        const uint8_t a, const uint8_t color) {
+void ST7558::fillSquare(int16_t x, int16_t y, 
+                      int16_t a, uint16_t color) {
      fillRect(x, y, a, a, color); 
 }
 
@@ -466,166 +446,168 @@ void ST7558::fillSquare(const uint8_t x, const uint8_t y,
 /** @brief Fill all framebuffer 
 */
 /***************************************************************/
-void ST7558::fillScreen(const uint8_t color) {
+void ST7558::fillScreen(int16_t color) {
      memset(_buffer, color ? 0xFF : 0x00, ST7558_BYTES_CAPACITY); 
 }
 
-/****************************************************************/
-/** @brief  Draw a line. Bresenham's algorithm
-    @param  x1  x coordinate of start point
-    @param  y1  y coordinate of start point
-    @param  x2  x coordinate of end point
-    @param  y2  y coordinate of end point
-    @param  color 
-*/
-/****************************************************************/
-void ST7558::drawLine(const uint8_t x1, const uint8_t y1, 
-                      const uint8_t x2, const uint8_t y2, 
-                      const uint8_t color) {
 
-    const uint8_t dx = abs(x2 - x1);
-    const uint8_t dy = abs(y2 - y1);
-    const uint8_t sx = x1 < x2 ? 1 : -1;
-    const uint8_t sy = y1 < y2 ? 1 : -1;
-    int error = dx - dy;
+// old code
+// /****************************************************************/
+// /** @brief  Draw a line. Bresenham's algorithm
+//     @param  x1  x coordinate of start point
+//     @param  y1  y coordinate of start point
+//     @param  x2  x coordinate of end point
+//     @param  y2  y coordinate of end point
+//     @param  color 
+// */
+// /****************************************************************/
+// void ST7558::drawLine(const uint8_t x1, const uint8_t y1, 
+//                       const uint8_t x2, const uint8_t y2, 
+//                       const uint8_t color) {
 
-    uint8_t x = x1;
-    uint8_t y = y1;
+//     const uint8_t dx = abs(x2 - x1);
+//     const uint8_t dy = abs(y2 - y1);
+//     const uint8_t sx = x1 < x2 ? 1 : -1;
+//     const uint8_t sy = y1 < y2 ? 1 : -1;
+//     int error = dx - dy;
 
-    drawPixel(x2, y2, color);
-    while(x != x2 || y != y2) {
+//     uint8_t x = x1;
+//     uint8_t y = y1;
 
-        const int16_t error2 = error * 2;
-        drawPixel(x, y, color);
-        if(error2 > -dy) {
+//     drawPixel(x2, y2, color);
+//     while(x != x2 || y != y2) {
 
-            error -= dy;
-            x += sx;
-        }
-        if(error2 < dx) {
+//         const int16_t error2 = error * 2;
+//         drawPixel(x, y, color);
+//         if(error2 > -dy) {
 
-            error += dx;
-            y += sy;
-        }
-    }
-}
+//             error -= dy;
+//             x += sx;
+//         }
+//         if(error2 < dx) {
 
-/****************************************************************/
-/** @brief  Draw a line. DDA algorithm. 
-    @param  x1  x coordinate of start point
-    @param  y1  y coordinate of start point
-    @param  x2  x coordinate of end point
-    @param  y2  y coordinate of end point
-    @param  color 
-*/
-/****************************************************************/
-void ST7558::drawLineDDA(const uint8_t x1, const uint8_t y1, 
-                         const uint8_t x2, const uint8_t y2, 
-                         const uint8_t color) {
+//             error += dx;
+//             y += sy;
+//         }
+//     }
+// }
+
+// /****************************************************************/
+// /** @brief  Draw a line. DDA algorithm. 
+//     @param  x1  x coordinate of start point
+//     @param  y1  y coordinate of start point
+//     @param  x2  x coordinate of end point
+//     @param  y2  y coordinate of end point
+//     @param  color 
+// */
+// /****************************************************************/
+// void ST7558::drawLineDDA(const uint8_t x1, const uint8_t y1, 
+//                          const uint8_t x2, const uint8_t y2, 
+//                          const uint8_t color) {
     
-    if (x1 > x2) {
+//     if (x1 > x2) {
 
-        _swap(x1, x2);
-        _swap(y1,y2);
-    }
-    const uint8_t dx = x2 - x1;
-    const uint8_t dy = abs(y2 - y1);
+//         _swap(x1, x2);
+//         _swap(y1,y2);
+//     }
+//     const uint8_t dx = x2 - x1;
+//     const uint8_t dy = abs(y2 - y1);
 
-    uint8_t length = max(dy, dx);
+//     uint8_t length = max(dy, dx);
 
-    const float dsx = float(x2 - x1) / float(length);
-    const float dsy = float(y2 - y1) / float(length);
+//     const float dsx = float(x2 - x1) / float(length);
+//     const float dsy = float(y2 - y1) / float(length);
 
-    float x = x1;
-    float y = y1;
+//     float x = x1;
+//     float y = y1;
 
-    while (length--) {
+//     while (length--) {
 
-        x += dsx;
-        y += dsy;
-        drawPixel(round(x), round(y), color);
-    }
-}
+//         x += dsx;
+//         y += dsy;
+//         drawPixel(round(x), round(y), color);
+//     }
+// }
 
-/****************************************************************/
-/** @brief  Draw a triangle
-    @param  x1  x coordinate of first vertex
-    @param  y1  y coordinate of first vertex
-    @param  x2  x coordinate of second vertex
-    @param  y2  y coordinate of second vertex
-    @param  x3  x coordinate of third vertex
-    @param  y3  y coordinate of third vertex
-    @param  color 
-*/
-/****************************************************************/
-void ST7558::drawTriangle(const uint8_t x1, const uint8_t y1, 
-                          const uint8_t x2, const uint8_t y2, 
-                          const uint8_t x3, const uint8_t y3, 
-                          const uint8_t color) {
+// /****************************************************************/
+// /** @brief  Draw a triangle
+//     @param  x1  x coordinate of first vertex
+//     @param  y1  y coordinate of first vertex
+//     @param  x2  x coordinate of second vertex
+//     @param  y2  y coordinate of second vertex
+//     @param  x3  x coordinate of third vertex
+//     @param  y3  y coordinate of third vertex
+//     @param  color 
+// */
+// /****************************************************************/
+// void ST7558::drawTriangle(const uint8_t x1, const uint8_t y1, 
+//                           const uint8_t x2, const uint8_t y2, 
+//                           const uint8_t x3, const uint8_t y3, 
+//                           const uint8_t color) {
 
-    drawLine(x1,y1,x2,y2,color);
-    drawLine(x2,y2,x3,y3,color);
-    drawLine(x3,y3,x1,y1,color);
-}
+//     drawLine(x1,y1,x2,y2,color);
+//     drawLine(x2,y2,x3,y3,color);
+//     drawLine(x3,y3,x1,y1,color);
+// }
 
-/****************************************************************/
-/** @brief  Set custom text color(ha-ha)
-    @param  color   color. Black or white for this LCD
-/****************************************************************/
-void ST7558::setTextColor(const uint8_t color) {
-    textcolor = color;
-}
+// /****************************************************************/
+// /** @brief  Set custom text color(ha-ha)
+//     @param  color   color. Black or white for this LCD
+// /****************************************************************/
+// void ST7558::setTextColor(const uint8_t color) {
+//     textcolor = color;
+// }
 
-/****************************************************************/
-/** @brief  Set custom cursor position
-    @param  x   x coordinate position
-    @param  y   y coordinate position
-*/
-/****************************************************************/
-void ST7558::setCursor(const uint8_t x, const uint8_t y) {
+// /****************************************************************/
+// /** @brief  Set custom cursor position
+//     @param  x   x coordinate position
+//     @param  y   y coordinate position
+// */
+// /****************************************************************/
+// void ST7558::setCursor(const uint8_t x, const uint8_t y) {
     
-    cursor_x = x;
-    cursor_y = y;    
-}
+//     cursor_x = x;
+//     cursor_y = y;    
+// }
 
-/****************************************************************/
-/** @brief  Draw a single char
-    @param  x1  x coordinate of first vertex
-    @param  y1  y coordinate of first vertex
-    @param  c   char what will drawed
-    @param  color 
-*/
-/****************************************************************/
-void ST7558::drawChar(const uint8_t x, const uint8_t y, const char c, const uint8_t color) {
+// /****************************************************************/
+// /** @brief  Draw a single char
+//     @param  x1  x coordinate of first vertex
+//     @param  y1  y coordinate of first vertex
+//     @param  c   char what will drawed
+//     @param  color 
+// */
+// /****************************************************************/
+// void ST7558::drawChar(const uint8_t x, const uint8_t y, const char c, const uint8_t color) {
 
-    for (uint8_t i = 0; i < CHAR_WIDTH; i++) {
+//     for (uint8_t i = 0; i < CHAR_WIDTH; i++) {
 
-        uint8_t ch_column = pgm_read_byte(&font[(c - 32)*CHAR_WIDTH + i]);
-        for (uint8_t j = 0; j < CHAR_HEIGHT; j++, ch_column >>=1){
+//         uint8_t ch_column = pgm_read_byte(&font[(c - 32)*CHAR_WIDTH + i]);
+//         for (uint8_t j = 0; j < CHAR_HEIGHT; j++, ch_column >>=1){
 
-            drawPixel(x+i, y+j, (ch_column & 1) ? color : !color);
-        }
-    }   
-}
+//             drawPixel(x+i, y+j, (ch_column & 1) ? color : !color);
+//         }
+//     }   
+// }
 
-/****************************************************************/
-/** @brief  Redefine a write method for Print.h
-    @param  c   input char
-*/
-/****************************************************************/
-size_t ST7558::write(const uint8_t c) {
+// /****************************************************************/
+// /** @brief  Redefine a write method for Print.h
+//     @param  c   input char
+// */
+// /****************************************************************/
+// size_t ST7558::write(const uint8_t c) {
     
-    if (c == '\n') {
+//     if (c == '\n') {
 
-        cursor_x = 0;
-        cursor_y += 8;
-    }
-    if (cursor_x > ST7558_WIDTH) {
+//         cursor_x = 0;
+//         cursor_y += 8;
+//     }
+//     if (cursor_x > ST7558_WIDTH) {
 
-        cursor_x = 0;
-        cursor_y += 8;
-    }
-    drawChar(cursor_x, cursor_y, c, textcolor);
-    cursor_x+=6;
-    return 1; // for compatibility with Print.h
-}
+//         cursor_x = 0;
+//         cursor_y += 8;
+//     }
+//     drawChar(cursor_x, cursor_y, c, textcolor);
+//     cursor_x+=6;
+//     return 1; // for compatibility with Print.h
+// }
