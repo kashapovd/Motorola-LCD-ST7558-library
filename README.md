@@ -34,12 +34,15 @@ Display from the phone Motorola C115 also included in:
 ST7558 library depends by Adafruit GFX library and you must install Adafruit GFX for your IDE.
 
 If you use Arduino IDE add ST7558 and Adafruit GFX libraries via "Sketch -> Include Library -> Add .ZIP Library" in Arduino IDE.\
-If you use Platformio IDE just add the following string in your platformio.ini:
+If you use Platformio IDE just add the following text in your platformio.ini:
 
     lib_deps=
         https://github.com/kashapovd/Motorola-LCD-ST7558-library
         https://github.com/adafruit/Adafruit-GFX-Library
 
-#### Author:
+## Demonstration ([video](https://youtu.be/PMxQ5Tmf7f8))
+
+![ST7558 LCD TEST](demo/demo.gif)
+
 Kashapov Yaroslav, 2020\
 feedback: [telegram](https://t.me/kashapovd), <y.kashapovd@gmail.com>
