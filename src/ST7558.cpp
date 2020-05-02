@@ -382,12 +382,12 @@ void ST7558::drawRect(int16_t x, int16_t y,
                       int16_t w, int16_t h, 
                       uint16_t color) {
     
-    for (int i = x; i < w+x; i++) {
+    for (int i = x; i <= w+x; i++) {
 
         drawPixel(i, y, color);
         drawPixel(i, y+h, color);
     }
-    for (int i = y; i < h+y; i++) {
+    for (int i = y+1; i < h+y; i++) {
 
         drawPixel(x, i, color);
         drawPixel(x+w, i, color);
