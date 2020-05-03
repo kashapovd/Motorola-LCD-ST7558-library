@@ -208,7 +208,7 @@ void ST7558::invertDisplay(bool state) {
 
         //CONTROL_BYTE,
         ST7558_FUNCTIONSET | BASIC,                         // Function set PD = 0, V = 0, H = 0 (basic instruction set)
-        ST7558_DISPLAY_CONROL | (state) ? INVERT : ON,      // Display control D = 1, E = 1 (Invert video mode)
+        ST7558_DISPLAY_CONROL | ON | state,      // Display control D = 1, E = 1 (Invert video mode)
     };
     _i2cwrite_cmd(cmd_invert, sizeof(cmd_invert));
 }
