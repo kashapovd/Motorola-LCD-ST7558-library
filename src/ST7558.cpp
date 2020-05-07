@@ -66,6 +66,20 @@ ST7558::ST7558(uint8_t rst_pin) : Adafruit_GFX (ST7558_WIDTH, ST7558_HEIGHT) {
     
     _buffer = nullptr;
     _rst_pin = rst_pin;
+    clock = 100000;
+}
+
+ST7558::ST7558(uint8_t rst_pin, uint32_t clock) : Adafruit_GFX (ST7558_WIDTH, ST7558_HEIGHT) {
+    
+    _buffer = nullptr;
+    _rst_pin = rst_pin;
+    if (clock > 300000) {
+        clock = 300000;
+    }
+    if (clock < 100000) {
+        clock = 100000;
+    }
+    this->clock = clock;
 }
 
 ST7558::~ST7558(void) {
@@ -171,7 +185,7 @@ void ST7558::begin(void) {
     
     WIRE_BEGIN;
     _buffer = (uint8_t *)malloc(ST7558_BYTES_CAPACITY);
-
+    Wire.setClock(clock);
     clearDisplay();
     _hardreset();
 
