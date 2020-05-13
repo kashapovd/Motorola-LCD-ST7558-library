@@ -62,19 +62,28 @@
 //                  CONSTRUCTOR & DESTRUCTOR                    //   
 /*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
 
+/**************************************************************/
+/** @brief Common constructor
+*/
+/**************************************************************/
 ST7558::ST7558(uint8_t rst_pin) : Adafruit_GFX (ST7558_WIDTH, ST7558_HEIGHT) {
     
     _buffer = nullptr;
     _rst_pin = rst_pin;
-    clock = 100000;
+    clock = 100000;     // standart frequency for most arduinos.
+                        // estimated maximum is 9 fps :( 
 }
 
+/**************************************************************/
+/** @brief Constructor with i2c clock frequency control
+*/
+/**************************************************************/
 ST7558::ST7558(uint8_t rst_pin, uint32_t clock) : Adafruit_GFX (ST7558_WIDTH, ST7558_HEIGHT) {
     
     _buffer = nullptr;
     _rst_pin = rst_pin;
     if (clock > 300000) {
-        clock = 300000;
+        clock = 300000;     // on 300kHz estimated maximum is 23-22 fps
     }
     if (clock < 100000) {
         clock = 100000;
@@ -100,11 +109,11 @@ ST7558::~ST7558(void) {
            32 bytes. 
 */
 /**************************************************************/
-void ST7558::_i2cwrite_cmd(const uint8_t *data, uint8_t n) {
+void ST7558::_i2cwrite(const uint8_t type, const uint8_t *data, uint8_t n) {
     
     uint8_t bytesOut;
     WIRE_START;
-    WIRE_WRITE(0x00);                       // <- the Co byte, see datasheet
+    WIRE_WRITE(type);                       // <- Co byte, see datasheet
     bytesOut = 1;
     while (n--) {
 
@@ -112,32 +121,7 @@ void ST7558::_i2cwrite_cmd(const uint8_t *data, uint8_t n) {
 
             WIRE_END;
             WIRE_START;
-            WIRE_WRITE(0x00);
-            bytesOut = 1; 
-        }
-        WIRE_WRITE(*data++);
-        bytesOut++;
-    } 
-    WIRE_END;
-}
-
-/**************************************************************/
-/** @brief This method writes some data (e.g. buffer). 
-*/
-/**************************************************************/
-void ST7558::_i2cwrite_data(const uint8_t *data, uint8_t n) {
-    
-    uint8_t bytesOut;
-    WIRE_START;
-    WIRE_WRITE(0x40);
-    bytesOut = 1;
-    while (n--) {
-
-        if (bytesOut >= I2C_MAX) {
-
-            WIRE_END;
-            WIRE_START;
-            WIRE_WRITE(0x40);
+            WIRE_WRITE(type);
             bytesOut = 1; 
         }
         WIRE_WRITE(*data++);
@@ -151,7 +135,7 @@ void ST7558::_i2cwrite_data(const uint8_t *data, uint8_t n) {
            software reset, but it doesn't work with I²C :(
 */
 /**************************************************************/
-void ST7558::_hardreset(void) {
+inline void ST7558::_hardreset(void) {
     
     pinMode(_rst_pin, OUTPUT);
     digitalWrite(_rst_pin, LOW);            // Bring reset low
@@ -165,16 +149,16 @@ void ST7558::_hardreset(void) {
            y[0...9](pages) address of RAM.
 */
 /**************************************************************/
-void ST7558::_setXY(uint8_t x, uint8_t y) {
+void ST7558::_setXY(const uint8_t x, const uint8_t y) {
     
     uint8_t cmd_setxy[] = {
 
-        //CONTROL_BYTE
+        //CONTROL_BYTE,
         ST7558_FUNCTIONSET | BASIC,         // Function set PD = 0, V = 0, H = 0 (basic instruction set)
         ST7558_XADDR + x,
         ST7558_YADDR + y
     };
-    _i2cwrite_cmd(cmd_setxy, sizeof(cmd_setxy));
+    _i2cwrite(ST7558_CMD, cmd_setxy, sizeof(cmd_setxy));
 }
 
 /**************************************************************/
@@ -192,7 +176,7 @@ void ST7558::begin(void) {
     // main lcd initialization 
     uint8_t cmd_init[] = {
 
-        //CONTROL_BYTE
+        //CONTROL_BYTE,
         ST7558_EXTENDED_DISPAY_CONTROL,         // Ext. display control | MX = 1, MY = 1
         ST7558_FUNCTIONSET | EXTENDED,          // Function set PD = 0, V = 0, H = 1 (extended instruction set)
         ST7558_SYSTEM_BIAS,
@@ -206,7 +190,7 @@ void ST7558::begin(void) {
         ST7558_YADDR,                         
         ST7558_XADDR                          
     };
-    _i2cwrite_cmd(cmd_init, sizeof(cmd_init)); 
+    _i2cwrite(ST7558_CMD, cmd_init, sizeof(cmd_init)); 
 }
 
 /****************************************************************/
@@ -216,7 +200,7 @@ void ST7558::begin(void) {
     @param  state   true - mode is on, false - off
 */
 /****************************************************************/
-void ST7558::invertDisplay(bool state) {
+void ST7558::invertDisplay(const bool state) {
     
     uint8_t cmd_invert[] = {
 
@@ -224,7 +208,7 @@ void ST7558::invertDisplay(bool state) {
         ST7558_FUNCTIONSET | BASIC,                         // Function set PD = 0, V = 0, H = 0 (basic instruction set)
         ST7558_DISPLAY_CONROL | ON | state,      // Display control D = 1, E = 1 (Invert video mode)
     };
-    _i2cwrite_cmd(cmd_invert, sizeof(cmd_invert));
+    _i2cwrite(ST7558_CMD, cmd_invert, sizeof(cmd_invert));
 }
 
 /**************************************************************/
@@ -239,7 +223,7 @@ void ST7558::displayOff(void) {
         ST7558_FUNCTIONSET | BASIC,                         // Function set PD = 0, V = 0, H = 0 (basic instruction set)
         ST7558_DISPLAY_CONROL | OFF,                        // Display control D = 0, E = 0 (Display off)
     };
-    _i2cwrite_cmd(cmd_off, sizeof(cmd_off));
+    _i2cwrite(ST7558_CMD, cmd_off, sizeof(cmd_off));
 }
 
 /**************************************************************/
@@ -254,7 +238,7 @@ void ST7558::displayOn(void) {
         ST7558_FUNCTIONSET | BASIC,                         // Function set PD = 0, V = 0, H = 0 (basic instruction set)
         ST7558_DISPLAY_CONROL | ON,                         // Display control D = 1, E = 0 (Normal mode)
     };
-    _i2cwrite_cmd(cmd_on, sizeof(cmd_on));
+    _i2cwrite(ST7558_CMD, cmd_on, sizeof(cmd_on));
 }
 
 /***************************************************************/
@@ -272,7 +256,7 @@ void ST7558::setContrast(const uint8_t value) {
         ST7558_VOP + ( value & 0b01111111)
     };
     
-    _i2cwrite_cmd(cmd_set_contrast, sizeof(cmd_set_contrast));
+    _i2cwrite(ST7558_CMD, cmd_set_contrast, sizeof(cmd_set_contrast));
 }
 
 /**************************************************************/
@@ -304,15 +288,22 @@ void ST7558::display(void) {
             buff[column] = _buffer[ST7558_WIDTH * page + column]; 
             column++;
         }
-        _i2cwrite_data(buff, sizeof(buff));
+        _i2cwrite(ST7558_DATA, buff, sizeof(buff));
     }
-    _setXY(0,0);
 }
 
 
 /*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
 //                     FEEDBACK FUNCTIONS                       //   
 /*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
+
+uint8_t ST7558::getPixel(const uint8_t x, const uint8_t y) {
+
+    if ((x >= 0 && x < ST7558_WIDTH) 
+    && (y >= 0 && y < ST7558_HEIGHT)) {
+        return ((1>>y%8) & _buffer[x + (y/8) * ST7558_WIDTH]);
+    }  
+}
 
 /**************************************************************/
 /** @brief Get memory pointer to the framebuffer
@@ -331,24 +322,6 @@ uint8_t *ST7558::getBuffer(void) {
 uint16_t ST7558::getBufferSize(void) {
     return ST7558_BYTES_CAPACITY; 
 }
-
-// /**************************************************************/
-// /** @brief Get width of the display
-//     @return Width in pixels
-// */
-// /**************************************************************/
-// uint8_t ST7558::width(void) { 
-//     return ST7558_WIDTH; 
-// }
-
-// /***************************************************************/
-// /** @brief Get height of the display
-//     @return Height in pixels
-// */
-// /***************************************************************/
-// uint8_t ST7558::height(void) { 
-//     return ST7558_HEIGHT; 
-// }
 
 /***************************************************************/
 /** @brief Push another buffer
