@@ -21,13 +21,10 @@ clearDisplay        KEYWORD2
 display             KEYWORD2
 getBuffer           KEYWORD2
 getBufferSize       KEYWORD2
+getPixel            KEYWORD2
 drawPixel           KEYWORD2
 drawRect	        KEYWORD2
 fillRect	        KEYWORD2
 drawSquare	        KEYWORD2
 fillSquare	        KEYWORD2
 fillScreen	        KEYWORD2
-	
-#######################################
-# Constants (LITERAL1)
-#######################################
