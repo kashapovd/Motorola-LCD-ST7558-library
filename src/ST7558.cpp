@@ -57,6 +57,7 @@
 #define WIRE_END                Wire.endTransmission()
 #define WIRE_WRITE(data)        Wire.write(data)  
 
+uint8_t _buffer[ST7558_BYTES_CAPACITY];
 
 /*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
 //                  CONSTRUCTOR & DESTRUCTOR                    //   
@@ -68,7 +69,6 @@
 /**************************************************************/
 ST7558::ST7558(uint8_t rst_pin) : Adafruit_GFX (ST7558_WIDTH, ST7558_HEIGHT) {
     
-    _buffer = nullptr;
     _rst_pin = rst_pin;
     clock = 100000;     // standart frequency for most arduinos.
                         // estimated maximum is 9 fps :( 
@@ -80,7 +80,6 @@ ST7558::ST7558(uint8_t rst_pin) : Adafruit_GFX (ST7558_WIDTH, ST7558_HEIGHT) {
 /**************************************************************/
 ST7558::ST7558(uint8_t rst_pin, uint32_t clock) : Adafruit_GFX (ST7558_WIDTH, ST7558_HEIGHT) {
     
-    _buffer = nullptr;
     _rst_pin = rst_pin;
     if (clock > 300000) {
         clock = 300000;     // on 300kHz estimated maximum is 23-22 fps
@@ -91,20 +90,12 @@ ST7558::ST7558(uint8_t rst_pin, uint32_t clock) : Adafruit_GFX (ST7558_WIDTH, ST
     this->clock = clock;
 }
 
-ST7558::~ST7558(void) {
-    
-    if (_buffer) 
-       free(_buffer);
-    _buffer = nullptr;
-}
-
-
 /*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
 //                          LOW-LEVEL UTILS                     //   
 /*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
 
 /**************************************************************/
-/** @brief This method writes instructions. 
+/** @brief This method writes cmds or data bytes. 
            For one I²C transmission session can be transmitted 
            32 bytes. 
 */
@@ -168,7 +159,6 @@ void ST7558::_setXY(const uint8_t x, const uint8_t y) {
 void ST7558::begin(void) {
     
     WIRE_BEGIN;
-    _buffer = (uint8_t *)malloc(ST7558_BYTES_CAPACITY);
     Wire.setClock(clock);
     clearDisplay();
     _hardreset();

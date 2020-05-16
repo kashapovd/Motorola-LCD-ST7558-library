@@ -109,14 +109,12 @@ class ST7558 : public Adafruit_GFX {
         void _hardreset(void);
         void _setXY (const uint8_t x, const uint8_t y);
         uint8_t _rst_pin;
-        uint8_t *_buffer;
         uint32_t clock;
 
     public:
 
         ST7558(uint8_t rst_pin);
         ST7558(uint8_t rst_pin, uint32_t clock);
-        ~ST7558(void);
         void begin(void);
         void displayOff(void);
         void displayOn(void);
