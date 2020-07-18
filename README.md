@@ -40,6 +40,13 @@ If you use Platformio IDE just add the following text in your platformio.ini:
         https://github.com/kashapovd/Motorola-LCD-ST7558-library
         https://github.com/adafruit/Adafruit-GFX-Library
 
+## How to connect
+
+Possible connection shown in this picture. Pairs R1-R4, R2-R5, R3-R6 are voltage divider, because C115 inputs are 3.3v tolerant
+\
+\
+<img src="connection/possible-conn-w-mcu.png" width="480" height="349">
+
 ## Demonstration ([video](https://youtu.be/PMxQ5Tmf7f8))
 
 ![ST7558 LCD TEST](demo/demo.gif)
