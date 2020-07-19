@@ -42,10 +42,14 @@ If you use Platformio IDE just add the following text in your platformio.ini:
 
 ## How to connect
 
-Possible connection shown in this picture. Pairs R1-R4, R2-R5, R3-R6 are voltage divider, because C115 inputs are 3.3v tolerant
+Possible connection shown in this picture. C115's inputs are 3.3v tolerant
 \
 \
-<img src="connection/possible-conn-w-mcu.png" width="480" height="349">
+<img src="connection/connection1.png" width="480" height="341">
+\
+or like this
+\
+<img src="connection/connection2.png" width="480" height="274">
 
 ## Demonstration ([video](https://youtu.be/PMxQ5Tmf7f8))
 
