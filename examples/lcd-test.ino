@@ -1,8 +1,7 @@
 /**************************************************************************
- This is an example for Monochrome LCD based on ST7558 drivers
- This example is for a 95x65 pixel display using I2C to communicate
+ This is an example for Monochrome LCD based on ST7558 drivers 
+ using I2C to communicate. 
  3 pins are required to interface (two I2C and one reset).
- Thanks fo Adafruit!
  **************************************************************************/
 
 #include <Adafruit_GFX.h>
