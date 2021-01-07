@@ -37,7 +37,7 @@ If you use Arduino IDE add ST7558, Adafruit GFX and Adafruit BusIO libraries via
 If you use Platformio IDE just add the following text in your platformio.ini:
 
     lib_deps=
-	https://github.com/adafruit/Adafruit_BusIO
+        https://github.com/adafruit/Adafruit_BusIO
         https://github.com/kashapovd/Motorola-LCD-ST7558-library
         https://github.com/adafruit/Adafruit-GFX-Library
 
@@ -50,7 +50,9 @@ Possible connection shown in this picture. C115's inputs are 3.3v tolerant
 \
 or like this
 \
-<img src="connection/connection2.png" width="480" height="274">
+<img src="connection/connection2.png" width="480" height="274"> 
+\
+but, i my case, I always do the direct connection
 
 ## Demonstration ([video](https://youtu.be/PMxQ5Tmf7f8))
 
