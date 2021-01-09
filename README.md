@@ -52,7 +52,7 @@ or like this
 \
 <img src="connection/connection2.png" width="480" height="274"> 
 \
-but, i my case, I always do the direct connection
+but, in my case, I always do the direct connection :)
 
 ## Demonstration ([video](https://youtu.be/PMxQ5Tmf7f8))
 
