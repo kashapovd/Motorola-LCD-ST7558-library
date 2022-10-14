@@ -59,4 +59,4 @@ but, in my case, I always do the direct connection :)
 ![ST7558 LCD TEST](demo/demo.gif)
 
 Kashapov Yaroslav, 2020\
-feedback: [telegram](https://t.me/kashapovd), <y.kashapovd@gmail.com>
+feedback: [telegram](https://t.me/kashapovd), <iam@kashapovd.xyz>
